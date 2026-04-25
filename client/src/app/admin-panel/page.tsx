@@ -12,7 +12,7 @@ import {
 // CONFIGURACIÓN DEL SISTEMA
 // ==========================================
 const SYSTEM_CONFIG = {
-  BUCKET_NAME: "APP-IMAGES",
+  BUCKET_NAME: "app-images", // <--- AQUÍ ESTÁ EL ARREGLO DEFINITIVO EN MINÚSCULAS
   TABLE_NAME: "applications",
 };
 
@@ -250,7 +250,7 @@ export default function AdminPanelRestored() {
 }
 
 // ==========================================
-// COMPONENTE MODAL
+// COMPONENTE MODAL 
 // ==========================================
 
 function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose: () => void; onSaved: () => void }) {
@@ -265,7 +265,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
     category: app?.category || "Aplicación",
     download_url: app?.download_url || "",
     status: app?.status || "active",
-    image_url: app?.image_url || "" // <-- CORRECCIÓN APLICADA AQUÍ
+    image_url: app?.image_url || ""
   });
 
   const handleSave = async (e: React.FormEvent) => {
