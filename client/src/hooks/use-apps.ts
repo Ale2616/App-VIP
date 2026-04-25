@@ -5,14 +5,10 @@ import { appsApi } from "@/lib/api/apps";
 
 export function useApps(category?: string, mostDownloaded?: boolean) {
   return useQuery({
-    queryKey: ["apps", { category, mostDownloaded }],
-    queryFn: async () => {
-      if (mostDownloaded) {
-        return appsApi.getMostDownloaded();
-      }
-      if (category) {
-        return appsApi.getByCategory(category);
-      }
+    queryKey: ["apps", category, mostDownloaded],
+    queryFn: () => {
+      if (mostDownloaded) return appsApi.getMostDownloaded();
+      if (category) return appsApi.getByCategory(category);
       return appsApi.getAll();
     },
   });
@@ -26,22 +22,25 @@ export function useApp(id: string) {
   });
 }
 
-export function useTrackDownload() {
-  return useMutation({
-    mutationFn: (id: string) => appsApi.trackDownload(id),
-  });
-}
-
 export function useCreateApp() {
-  return useMutation({
-    mutationFn: (data: Parameters<typeof appsApi.create>[0]) => appsApi.create(data),
-  });
-}
+  const queryClient = useQueryClient();
 
-export function useUpdateApp() {
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof appsApi.update>[1] }) =>
-      appsApi.update(id, data),
+    mutationFn: (appData: {
+      name: string;
+      description: string;
+      version?: string;
+      icon_url?: string;
+      image_url?: string;
+      download_url?: string;
+      file_path?: string;
+      file_size?: number;
+      category: string;
+      uploaded_by?: string;
+    }) => appsApi.create(appData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["apps"] });
+    },
   });
 }
 
@@ -56,8 +55,31 @@ export function useDeleteApp() {
   });
 }
 
+export function useTrackDownload() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => appsApi.trackDownload(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["apps"] });
+    },
+  });
+}
+
 export function useUploadImage() {
   return useMutation({
     mutationFn: (file: File) => appsApi.uploadImage(file),
+  });
+}
+
+export function useUploadFile() {
+  return useMutation({
+    mutationFn: ({
+      file,
+      folder,
+    }: {
+      file: File;
+      folder?: string;
+    }) => appsApi.uploadFile(file, folder),
   });
 }

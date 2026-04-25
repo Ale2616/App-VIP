@@ -1,56 +1,89 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { authApi } from "@/lib/api/auth";
+import { useMutation } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/auth-store";
 import { useRouter } from "next/navigation";
 
 export function useLogin() {
-  const { setAuth } = useAuthStore();
+  const { setProfile } = useAuthStore();
   const router = useRouter();
 
   return useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) =>
-      authApi.login(email, password),
-    onSuccess: (data) => {
-      console.log("========================================");
-      console.log("[USE LOGIN HOOK] onSuccess called");
-      console.log("[USE LOGIN HOOK] User:", JSON.stringify(data.user));
-      console.log("[USE LOGIN HOOK] Token length:", data.token?.length);
-      console.log("========================================");
+    mutationFn: async ({
+      email,
+      password,
+    }: {
+      email: string;
+      password: string;
+    }) => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      console.log("[USE LOGIN HOOK] Calling setAuth...");
-      setAuth(data.user, data.token);
-      console.log("[USE LOGIN HOOK] setAuth done. isAuthenticated:", useAuthStore.getState().isAuthenticated);
-      console.log("[USE LOGIN HOOK] isAdmin:", useAuthStore.getState().isAdmin);
-
-      console.log("[USE LOGIN HOOK] Redirecting to /");
-      router.push("/");
+      if (error) throw error;
+      return data;
     },
-    onError: (error: any) => {
-      console.error("[USE LOGIN HOOK] mutation error:", error.message);
+    onSuccess: async (data) => {
+      if (data.user) {
+        // Fetch profile from profiles table
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", data.user.id)
+          .single();
+
+        if (profile) {
+          setProfile(profile);
+        }
+      }
+      router.push("/");
     },
   });
 }
 
 export function useRegister() {
-  const { setAuth } = useAuthStore();
+  const { setProfile } = useAuthStore();
   const router = useRouter();
 
   return useMutation({
-    mutationFn: ({ name, email, password }: { name: string; email: string; password: string }) =>
-      authApi.register(name, email, password),
-    onSuccess: (data) => {
-      setAuth(data.user, data.token);
+    mutationFn: async ({
+      name,
+      email,
+      password,
+    }: {
+      name: string;
+      email: string;
+      password: string;
+    }) => {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name },
+        },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async (data) => {
+      if (data.user) {
+        // Small delay to let the trigger create the profile
+        await new Promise((r) => setTimeout(r, 500));
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", data.user.id)
+          .single();
+
+        if (profile) {
+          setProfile(profile);
+        }
+      }
       router.push("/");
     },
-  });
-}
-
-export function useCurrentUser() {
-  return useQuery({
-    queryKey: ["currentUser"],
-    queryFn: () => authApi.getMe(),
-    enabled: !!localStorage.getItem("token"),
   });
 }

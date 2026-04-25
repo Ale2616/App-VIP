@@ -1,61 +1,53 @@
 import { create } from "zustand";
-import type { User } from "@/types";
+import { supabase } from "@/lib/supabase";
+import type { Profile } from "@/types";
 
 interface AuthState {
-  user: User | null;
-  token: string | null;
+  profile: Profile | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  setAuth: (user: User, token: string) => void;
-  logout: () => void;
-  initialize: () => void;
+  isLoading: boolean;
+  setProfile: (profile: Profile) => void;
+  clearAuth: () => void;
+  setLoading: (loading: boolean) => void;
+  logout: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  token: null,
+  profile: null,
   isAuthenticated: false,
   isAdmin: false,
+  isLoading: true,
 
-  setAuth: (user, token) => {
-    console.log("[AUTH STORE] setAuth() called");
-    console.log("[AUTH STORE] User:", JSON.stringify(user));
-    console.log("[AUTH STORE] Token length:", token.length);
-    console.log("[AUTH STORE] Saving token to localStorage...");
-    if (typeof window !== "undefined") {
-      localStorage.setItem("token", token);
-    }
+  setProfile: (profile) => {
     set({
-      user,
-      token,
+      profile,
       isAuthenticated: true,
-      isAdmin: user.role === "admin",
+      isAdmin: profile.role === "admin",
+      isLoading: false,
     });
-    console.log("[AUTH STORE] State updated. isAuthenticated=true, isAdmin=", user.role === "admin");
   },
 
-  logout: () => {
-    console.log("[AUTH STORE] logout() called");
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("token");
-    }
+  clearAuth: () => {
     set({
-      user: null,
-      token: null,
+      profile: null,
       isAuthenticated: false,
       isAdmin: false,
+      isLoading: false,
     });
-    console.log("[AUTH STORE] State cleared");
   },
 
-  initialize: () => {
-    if (typeof window === "undefined") return;
-    
-    const token = localStorage.getItem("token");
-    console.log("[AUTH STORE] initialize() called. Token in localStorage:", token ? "YES" : "NO");
-    if (token) {
-      set({ token, isAuthenticated: true });
-      console.log("[AUTH STORE] isAuthenticated set to true");
-    }
+  setLoading: (loading) => {
+    set({ isLoading: loading });
+  },
+
+  logout: async () => {
+    await supabase.auth.signOut();
+    set({
+      profile: null,
+      isAuthenticated: false,
+      isAdmin: false,
+      isLoading: false,
+    });
   },
 }));

@@ -63,7 +63,7 @@ function AppDetailPage() {
     if (!data?.app) return;
     try {
       const result = await trackDownload.mutateAsync(data.app.id);
-      window.open(result.downloadUrl, "_blank");
+      window.open(result.download_url, "_blank");
       toast.success("¡Descarga iniciada!");
     } catch (error) {
       toast.error("Error al rastrear la descarga");
@@ -174,11 +174,11 @@ function AppDetailPage() {
                   className="relative shrink-0"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-3xl blur-xl opacity-50" />
-                  <img
-                    src={app.iconUrl}
-                    alt={app.name}
-                    className="w-28 h-28 md:w-32 md:h-32 rounded-3xl object-cover relative z-10 shadow-2xl"
-                  />
+                  {app.icon_url ? (
+                     <img src={app.icon_url} alt={app.name} className="w-28 h-28 md:w-32 md:h-32 rounded-3xl object-cover relative z-10 shadow-2xl" />
+                   ) : (
+                     <div className="w-28 h-28 md:w-32 md:h-32 rounded-3xl bg-slate-800 flex items-center justify-center relative z-10 shadow-2xl"><Bot className="w-12 h-12 text-slate-600" /></div>
+                   )}
                 </motion.div>
 
                 <div className="flex-1">
@@ -198,11 +198,11 @@ function AppDetailPage() {
                     className="flex flex-wrap items-center gap-3"
                   >
                     <Badge className="bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white border-0">
-                      {app.categoryName}
+                      {app.category}
                     </Badge>
                     <span className="text-sm text-slate-400 flex items-center gap-1.5">
                       <Download className="w-4 h-4 text-green-400" />
-                      {app.downloadCount.toLocaleString("es-ES")} descargas
+                      {app.download_count.toLocaleString("es-ES")} descargas
                     </span>
                     <span className="text-sm text-slate-400 flex items-center gap-1.5">
                       <Star className="w-4 h-4 text-amber-400" />
@@ -238,11 +238,11 @@ function AppDetailPage() {
             className="mb-6 relative"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-fuchsia-500/10 rounded-3xl blur-2xl" />
-            <img
-              src={app.imageUrl}
-              alt={app.name}
-              className="w-full h-64 md:h-96 object-cover rounded-3xl shadow-2xl relative z-10 border border-slate-800/50"
-            />
+            {app.image_url ? (
+               <img src={app.image_url} alt={app.name} className="w-full h-64 md:h-96 object-cover rounded-3xl shadow-2xl relative z-10 border border-slate-800/50" />
+             ) : (
+               <div className="w-full h-64 md:h-96 rounded-3xl bg-slate-800/50 flex items-center justify-center relative z-10 border border-slate-800/50"><Bot className="w-20 h-20 text-slate-700" /></div>
+             )}
           </motion.div>
 
           {/* Download Button */}
@@ -318,7 +318,7 @@ function AppDetailPage() {
                     </div>
                     <div>
                       <p className="text-xs text-slate-500">Descargas</p>
-                      <p className="text-white font-semibold">{app.downloadCount.toLocaleString("es-ES")}</p>
+                      <p className="text-white font-semibold">{app.download_count.toLocaleString("es-ES")}</p>
                     </div>
                   </div>
 
@@ -329,7 +329,7 @@ function AppDetailPage() {
                     <div>
                       <p className="text-xs text-slate-500">Agregado</p>
                       <p className="text-white font-semibold">
-                        {new Date(app.createdAt).toLocaleDateString("es-ES", {
+                        {new Date(app.created_at).toLocaleDateString("es-ES", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",
