@@ -95,7 +95,7 @@ function AdminContent() {
     app.category.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const totalDownloads = data?.apps?.reduce((sum, app) => sum + app.download_count, 0) || 0;
+  const totalDownloads = data?.apps?.reduce((sum, app) => sum + (app.download_count ?? 0), 0) || 0;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-slate-950 to-slate-900 relative">
@@ -140,7 +140,7 @@ function AdminContent() {
           </Card>
           <Card className="bg-slate-900/60 backdrop-blur-xl border-slate-800/50 shadow-lg">
             <CardHeader className="pb-2"><CardTitle className="text-slate-400 text-sm font-medium flex items-center gap-2"><div className="p-1.5 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500"><Download className="w-4 h-4 text-white" /></div>Total de Descargas</CardTitle></CardHeader>
-            <CardContent><p className="text-4xl font-bold text-white">{isLoading ? <Skeleton className="h-10 w-24" /> : totalDownloads.toLocaleString("es-ES")}</p><p className="text-xs text-slate-500 mt-1">Descargas totales</p></CardContent>
+            <CardContent><p className="text-4xl font-bold text-white">{isLoading ? <Skeleton className="h-10 w-24" /> : (totalDownloads ?? 0).toLocaleString("es-ES")}</p><p className="text-xs text-slate-500 mt-1">Descargas totales</p></CardContent>
           </Card>
           <Card className="bg-slate-900/60 backdrop-blur-xl border-slate-800/50 shadow-lg">
             <CardHeader className="pb-2"><CardTitle className="text-slate-400 text-sm font-medium flex items-center gap-2"><div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-yellow-500"><Users className="w-4 h-4 text-white" /></div>Administrador</CardTitle></CardHeader>
@@ -216,7 +216,7 @@ function AdminContent() {
                           <div className="min-w-0"><p className="text-sm font-medium text-white truncate">{app.name}</p><p className="text-xs text-slate-500 truncate max-w-[200px]">{app.description}</p></div>
                         </div></td>
                         <td className="px-6 py-4 hidden sm:table-cell"><Badge variant="secondary" className="text-xs bg-slate-800/50 border-slate-700">{app.category}</Badge></td>
-                        <td className="px-6 py-4 hidden md:table-cell"><span className="text-sm text-slate-400 flex items-center gap-1.5"><Download className="w-3 h-3" />{app.download_count.toLocaleString("es-ES")}</span></td>
+                        <td className="px-6 py-4 hidden md:table-cell"><span className="text-sm text-slate-400 flex items-center gap-1.5"><Download className="w-3 h-3" />{(app.download_count ?? 0).toLocaleString("es-ES")}</span></td>
                         <td className="px-6 py-4 text-right">
                           <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-slate-800"><MoreVertical className="w-4 h-4 text-slate-400" /></Button></DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="bg-slate-900 border-slate-800"><DropdownMenuItem onClick={()=>setConfirmDelete(app.id)} className="text-red-400 focus:text-red-400 focus:bg-red-900/20 cursor-pointer"><Trash2 className="w-4 h-4 mr-2" />Eliminar</DropdownMenuItem></DropdownMenuContent>

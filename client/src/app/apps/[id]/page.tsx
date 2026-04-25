@@ -202,7 +202,7 @@ function AppDetailPage() {
                     </Badge>
                     <span className="text-sm text-slate-400 flex items-center gap-1.5">
                       <Download className="w-4 h-4 text-green-400" />
-                      {app.download_count.toLocaleString("es-ES")} descargas
+                      {(app.download_count ?? 0).toLocaleString("es-ES")} descargas
                     </span>
                     <span className="text-sm text-slate-400 flex items-center gap-1.5">
                       <Star className="w-4 h-4 text-amber-400" />
@@ -318,7 +318,7 @@ function AppDetailPage() {
                     </div>
                     <div>
                       <p className="text-xs text-slate-500">Descargas</p>
-                      <p className="text-white font-semibold">{app.download_count.toLocaleString("es-ES")}</p>
+                      <p className="text-white font-semibold">{(app.download_count ?? 0).toLocaleString("es-ES")}</p>
                     </div>
                   </div>
 
@@ -329,11 +329,11 @@ function AppDetailPage() {
                     <div>
                       <p className="text-xs text-slate-500">Agregado</p>
                       <p className="text-white font-semibold">
-                        {new Date(app.created_at).toLocaleDateString("es-ES", {
+                        {app.created_at ? new Date(app.created_at).toLocaleDateString("es-ES", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",
-                        })}
+                        }) : "Fecha no disponible"}
                       </p>
                     </div>
                   </div>
