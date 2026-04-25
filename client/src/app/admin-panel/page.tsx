@@ -24,7 +24,7 @@ import type { App } from "@/types";
 const SUPABASE_URL = "https://wzeklbcmloxxvzqtxocq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Irc_VuEUm_TMrVfB9dgf3g_UxAyGRVG";
 const TABLE = "applications";
-const BUCKET = "APP-IMAGES";
+const BUCKET = "app-images";
 
 const headers = {
   apikey: SUPABASE_KEY,
@@ -97,7 +97,11 @@ async function uploadImage(file: File): Promise<string> {
       body: file,
     }
   );
-  if (!res.ok) throw new Error("Error al subir imagen");
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => null);
+    const msg = (errBody as any)?.message || (errBody as any)?.error || "Error al subir imagen";
+    throw new Error(msg);
+  }
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${fileName}`;
 }
 
@@ -533,7 +537,7 @@ function EditModal({
       onSaved(updated);
     } catch (err: any) {
       toast.error(err.message);
-      alert("Error: " + err.message);
+      alert("Error real: " + err.message);
     } finally {
       setSaving(false);
     }

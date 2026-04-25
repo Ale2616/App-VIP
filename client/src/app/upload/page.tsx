@@ -93,31 +93,37 @@ function UploadContent() {
         setUploadStep("Subiendo imagen...");
         const ext = imageFile.name.split(".").pop() || "png";
         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const uploadPath = `${SUPABASE_URL}/storage/v1/object/APP-IMAGES/${fileName}`;
 
-        const uploadRes = await fetch(
-          `${SUPABASE_URL}/storage/v1/object/APP-IMAGES/${fileName}`,
-          {
-            method: "POST",
-            headers: {
-              "apikey": SUPABASE_KEY,
-              "Authorization": `Bearer ${SUPABASE_KEY}`,
-              "Content-Type": imageFile.type,
-              "x-upsert": "true",
-            },
-            body: imageFile,
-          }
-        );
+        console.log("📤 Subiendo imagen a:", uploadPath);
+        console.log("📤 Tipo:", imageFile.type, "| Tamaño:", imageFile.size, "bytes");
+
+        const uploadRes = await fetch(uploadPath, {
+          method: "POST",
+          headers: {
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": imageFile.type,
+            "x-upsert": "true",
+          },
+          body: imageFile,
+        });
+
+        const uploadBody = await uploadRes.json().catch(() => null);
+        console.log("📤 Respuesta Storage:", uploadRes.status, uploadBody);
 
         if (!uploadRes.ok) {
-          const err = await uploadRes.json().catch(() => null);
-          throw new Error(
-            (err as any)?.message || `Error al subir imagen (${uploadRes.status})`
-          );
+          const errorMsg = (uploadBody as any)?.message
+            || (uploadBody as any)?.error
+            || (uploadBody as any)?.statusCode
+            || JSON.stringify(uploadBody);
+          alert("Error real de Storage: " + errorMsg);
+          throw new Error("Storage: " + errorMsg);
         }
 
         // ── Step 2: Get the public URL ──────────────────────
         imageUrl = `${SUPABASE_URL}/storage/v1/object/public/APP-IMAGES/${fileName}`;
-        console.log("Imagen subida:", imageUrl);
+        console.log("✅ Imagen subida OK:", imageUrl);
       }
 
       // ── Step 3: Insert into the applications table ────────
@@ -130,7 +136,7 @@ function UploadContent() {
         download_url: formData.download_url,
         image_url: imageUrl,
       };
-      console.log("Insertando:", row);
+      console.log("📝 Insertando en BD:", row);
 
       const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/applications`, {
         method: "POST",
@@ -143,21 +149,22 @@ function UploadContent() {
         body: JSON.stringify(row),
       });
 
-      const body = await dbRes.json();
+      const dbBody = await dbRes.json();
+      console.log("📝 Respuesta BD:", dbRes.status, dbBody);
 
       if (!dbRes.ok) {
-        console.error("DB Error:", body);
-        throw new Error((body as any)?.message || JSON.stringify(body));
+        const errorMsg = (dbBody as any)?.message || JSON.stringify(dbBody);
+        alert("Error real de BD: " + errorMsg);
+        throw new Error("BD: " + errorMsg);
       }
 
-      console.log("App insertada:", body);
+      console.log("✅ App publicada OK:", dbBody);
       setIsSuccess(true);
       toast.success("¡Aplicación publicada exitosamente!");
       reset();
       clearImage();
     } catch (err: any) {
-      console.error("Error:", err);
-      alert("Error: " + (err?.message || String(err)));
+      console.error("❌ Error completo:", err);
       toast.error(err?.message || "Error al publicar");
     } finally {
       setIsSubmitting(false);
