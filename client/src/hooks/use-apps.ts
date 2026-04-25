@@ -11,6 +11,8 @@ export function useApps(category?: string, mostDownloaded?: boolean) {
       if (category) return appsApi.getByCategory(category);
       return appsApi.getAll();
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 }
 
