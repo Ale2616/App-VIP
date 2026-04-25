@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useApp, useTrackDownload } from "@/hooks/use-apps";
+import { useApp } from "@/hooks/use-apps";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -57,17 +57,14 @@ function AppDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { data, isLoading } = useApp(params.id as string);
-  const trackDownload = useTrackDownload();
 
-  const handleDownload = async () => {
-    if (!data?.app) return;
-    try {
-      const result = await trackDownload.mutateAsync(data.app.id);
-      window.open(result.download_url, "_blank");
-      toast.success("¡Descarga iniciada!");
-    } catch (error) {
-      toast.error("Error al rastrear la descarga");
+  const handleDownload = () => {
+    if (!data?.app?.download_url) {
+      toast.error("Esta app no tiene enlace de descarga");
+      return;
     }
+    window.open(data.app.download_url, "_blank");
+    toast.success("¡Descarga iniciada!");
   };
 
   if (isLoading) {
@@ -256,11 +253,12 @@ function AppDetailPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <Button
-                onClick={handleDownload}
-                disabled={trackDownload.isPending}
-                size="lg"
-                className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 hover:from-green-600 hover:via-emerald-600 hover:to-green-600 py-7 text-lg font-semibold shadow-2xl shadow-green-500/25 hover:shadow-green-500/40 relative overflow-hidden group"
+              <a
+                href={app.download_url || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => { if (!app.download_url) { e.preventDefault(); toast.error("Sin enlace de descarga"); } else { toast.success("¡Descarga iniciada!"); } }}
+                className="w-full inline-flex items-center justify-center bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 hover:from-green-600 hover:via-emerald-600 hover:to-green-600 py-5 text-lg font-semibold shadow-2xl shadow-green-500/25 hover:shadow-green-500/40 relative overflow-hidden group rounded-lg text-white"
               >
                 <motion.span
                   className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
@@ -268,9 +266,9 @@ function AppDetailPage() {
                   transition={{ duration: 2, repeat: Infinity }}
                 />
                 <Download className="w-6 h-6 mr-2" />
-                {trackDownload.isPending ? "Preparando..." : "Descargar Ahora"}
+                Descargar Ahora
                 <ExternalLink className="w-5 h-5 ml-2" />
-              </Button>
+              </a>
             </motion.div>
           </motion.div>
 

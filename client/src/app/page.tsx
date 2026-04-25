@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useAuthStore } from "@/store/auth-store";
-import { useApps, useTrackDownload } from "@/hooks/use-apps";
+import { useApps } from "@/hooks/use-apps";
 import { useLogActivity } from "@/hooks/use-visits";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,13 +51,13 @@ function GradientOrbs() {
 }
 
 function AppCard({ app, index }: { app: App; index: number }) {
-  const trackDownload = useTrackDownload();
-  const handleDownload = async () => {
-    try {
-      const result = await trackDownload.mutateAsync(app.id);
-      window.open(result.download_url, "_blank");
+  const handleDownload = () => {
+    if (app.download_url) {
+      window.open(app.download_url, "_blank");
       toast.success("¡Descarga iniciada!");
-    } catch { toast.error("Error al iniciar la descarga"); }
+    } else {
+      toast.error("Esta app no tiene enlace de descarga");
+    }
   };
 
   return (
@@ -90,9 +90,15 @@ function AppCard({ app, index }: { app: App; index: number }) {
                 </span>
               </div>
             </div>
-            <Button onClick={handleDownload} disabled={trackDownload.isPending} className="shrink-0 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/25 px-5 h-10">
+            <a
+              href={app.download_url || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => { if (!app.download_url) { e.preventDefault(); toast.error("Sin enlace de descarga"); } else { toast.success("¡Descarga iniciada!"); } }}
+              className="shrink-0 inline-flex items-center justify-center bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/25 px-5 h-10 rounded-md text-white text-sm font-medium transition-colors"
+            >
               <Download className="w-4 h-4 mr-2" />Descargar
-            </Button>
+            </a>
           </div>
         </CardContent>
       </Card>
