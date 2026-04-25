@@ -231,26 +231,28 @@ export default function HomePage() {
             <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-xl shadow-lg shadow-purple-500/20"><Bot className="w-5 h-5 text-white" /></div>
             <span className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">App VIP</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Panel Pro — siempre visible */}
+            <Link href="/admin">
+              <Button size="sm" className="bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-semibold shadow-lg shadow-amber-500/20 px-2.5 sm:px-4">
+                <Crown className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Panel Pro</span>
+              </Button>
+            </Link>
+
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
                 <Link href="/upload">
-                  <Button size="sm" className="bg-gradient-to-r from-emerald-500 to-cyan-600 shadow-lg shadow-emerald-500/20">
-                    <Upload className="w-4 h-4 mr-1" />Subir
+                  <Button size="sm" className="bg-gradient-to-r from-emerald-500 to-cyan-600 shadow-lg shadow-emerald-500/20 px-2.5 sm:px-4">
+                    <Upload className="w-4 h-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Subir</span>
                   </Button>
                 </Link>
-                {isAdmin && (
-                  <Link href="/admin">
-                    <Button size="sm" className="bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-semibold shadow-lg shadow-amber-500/20">
-                      <Crown className="w-4 h-4 mr-1" />Panel
-                    </Button>
-                  </Link>
-                )}
                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/50 border border-slate-800">
                   <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center"><User className="w-3 h-3 text-white" /></div>
                   <span className="text-sm text-slate-300">{profile?.name}</span>
                 </div>
-                <Button variant="destructive" size="sm" onClick={() => { logout(); toast.info("Sesión cerrada"); }} className="bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-600/30">
+                <Button variant="destructive" size="sm" onClick={() => { logout(); toast.info("Sesión cerrada"); }} className="bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-600/30 px-2.5">
                   <LogOut className="w-4 h-4" />
                 </Button>
               </div>
