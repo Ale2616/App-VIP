@@ -33,9 +33,9 @@ function FloatingParticles() {
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
       {Array.from({ length: 20 }, (_, i) => (
         <motion.div key={i} className="absolute w-1 h-1 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 rounded-full"
-          style={{ left: `${(i*37+13)%100}%`, top: `${(i*53+7)%100}%` }}
-          animate={{ y:[0,-100,0], opacity:[0,.8,0], scale:[0,1.5,0] }}
-          transition={{ duration:5+(i%5), repeat:Infinity, delay:i*.2, ease:"easeInOut" }} />
+          style={{ left: `${(i * 37 + 13) % 100}%`, top: `${(i * 53 + 7) % 100}%` }}
+          animate={{ y: [0, -100, 0], opacity: [0, .8, 0], scale: [0, 1.5, 0] }}
+          transition={{ duration: 5 + (i % 5), repeat: Infinity, delay: i * .2, ease: "easeInOut" }} />
       ))}
     </div>
   );
@@ -44,8 +44,8 @@ function FloatingParticles() {
 function GradientOrbs() {
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      <motion.div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-purple-500/30 to-fuchsia-500/30 rounded-full blur-3xl" animate={{ scale:[1,1.2,1] }} transition={{ duration:15, repeat:Infinity }} />
-      <motion.div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-gradient-to-tr from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl" animate={{ scale:[1.2,1,1.2] }} transition={{ duration:18, repeat:Infinity }} />
+      <motion.div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-purple-500/30 to-fuchsia-500/30 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 15, repeat: Infinity }} />
+      <motion.div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-gradient-to-tr from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl" animate={{ scale: [1.2, 1, 1.2] }} transition={{ duration: 18, repeat: Infinity }} />
     </div>
   );
 }
@@ -61,17 +61,17 @@ function AppCard({ app, index }: { app: App; index: number }) {
   };
 
   return (
-    <motion.div initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} transition={{ delay:index*.05 }} className="group">
+    <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * .05 }} className="group">
       <Card className="bg-slate-900/60 backdrop-blur-xl border-slate-800/50 hover:border-purple-500/30 transition-all duration-300 overflow-hidden hover:shadow-2xl hover:shadow-purple-500/10">
         <CardContent className="p-5">
           <div className="flex items-start gap-4">
             <Link href={`/apps/${app.id}`} className="shrink-0">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
-                {app.icon_url ? (
-                  <img src={app.icon_url} alt={app.name} className="w-16 h-16 rounded-2xl object-cover relative z-10 shadow-lg" />
+                {(app.icon_url || app.image_url) ? (
+                  <img src={app.icon_url || app.image_url!} alt={app.name} className="w-16 h-16 rounded-2xl object-cover relative z-10 shadow-lg" />
                 ) : (
-                  <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center relative z-10 shadow-lg"><Package className="w-8 h-8 text-slate-600"/></div>
+                  <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center relative z-10 shadow-lg"><Package className="w-8 h-8 text-slate-600" /></div>
                 )}
               </div>
             </Link>
@@ -118,24 +118,24 @@ function AppCardSkeleton() {
 
 function HeroSection({ totalApps, totalDownloads }: { totalApps: number; totalDownloads: number }) {
   const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0,500], [0,200]);
-  const opacity = useTransform(scrollY, [0,300], [1,0]);
+  const y = useTransform(scrollY, [0, 500], [0, 200]);
+  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
   return (
     <motion.div style={{ y, opacity }} className="relative py-16 md:py-24">
       <div className="container mx-auto px-4 text-center">
-        <motion.div initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} transition={{ duration:.8 }}>
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8 }}>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 mb-6">
             <Sparkles className="w-4 h-4 text-purple-400" /><span className="text-sm text-purple-300">El mejor catálogo de aplicaciones</span>
           </div>
         </motion.div>
-        <motion.h1 initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:.8, delay:.1 }} className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6">
-          <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">Descubre las Mejores</span><br/>
+        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .1 }} className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6">
+          <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">Descubre las Mejores</span><br />
           <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">Apps y Juegos</span>
         </motion.h1>
-        <motion.p initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:.8, delay:.2 }} className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10">
+        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .2 }} className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10">
           Explora nuestro catálogo premium con las aplicaciones más populares y seguras
         </motion.p>
-        <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:.8, delay:.3 }} className="flex flex-wrap justify-center gap-4 mb-12">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .3 }} className="flex flex-wrap justify-center gap-4 mb-12">
           <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900/50 border border-slate-800">
             <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-fuchsia-500"><AppWindow className="w-5 h-5 text-white" /></div>
             <div><p className="text-2xl font-bold text-white">{totalApps}</p><p className="text-xs text-slate-500">Aplicaciones</p></div>
@@ -149,7 +149,7 @@ function HeroSection({ totalApps, totalDownloads }: { totalApps: number; totalDo
             <div><p className="text-2xl font-bold text-white">100%</p><p className="text-xs text-slate-500">Seguro</p></div>
           </div>
         </motion.div>
-        <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:.8, delay:.4 }} className="flex flex-wrap justify-center gap-3">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .8, delay: .4 }} className="flex flex-wrap justify-center gap-3">
           <div className="flex items-center gap-2 text-sm text-slate-400"><Zap className="w-4 h-4 text-yellow-400" /><span>Descargas rápidas</span></div>
           <div className="flex items-center gap-2 text-sm text-slate-400"><Star className="w-4 h-4 text-amber-400" /><span>Apps verificadas</span></div>
           <div className="flex items-center gap-2 text-sm text-slate-400"><Globe className="w-4 h-4 text-blue-400" /><span>Actualizado 24/7</span></div>
@@ -250,7 +250,7 @@ export default function HomePage() {
                   <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center"><User className="w-3 h-3 text-white" /></div>
                   <span className="text-sm text-slate-300">{profile?.name}</span>
                 </div>
-                <Button variant="destructive" size="sm" onClick={()=>{logout();toast.info("Sesión cerrada");}} className="bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-600/30">
+                <Button variant="destructive" size="sm" onClick={() => { logout(); toast.info("Sesión cerrada"); }} className="bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-600/30">
                   <LogOut className="w-4 h-4" />
                 </Button>
               </div>
@@ -272,10 +272,10 @@ export default function HomePage() {
       <div className="container mx-auto px-4 py-6">
         <div className="relative max-w-2xl mx-auto">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-          <input type="text" value={searchTerm} onChange={e=>{setSearchTerm(e.target.value);if(e.target.value)setShowHero(false)}} placeholder="Buscar aplicaciones o juegos..."
+          <input type="text" value={searchTerm} onChange={e => { setSearchTerm(e.target.value); if (e.target.value) setShowHero(false) }} placeholder="Buscar aplicaciones o juegos..."
             className="w-full h-14 pl-12 pr-10 rounded-2xl bg-slate-900/80 border border-slate-700/50 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all text-base shadow-xl shadow-purple-500/5" />
           {searchTerm && (
-            <button onClick={()=>setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors p-1 hover:bg-slate-800 rounded-full"><X className="w-5 h-5" /></button>
+            <button onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors p-1 hover:bg-slate-800 rounded-full"><X className="w-5 h-5" /></button>
           )}
         </div>
       </div>
@@ -287,7 +287,7 @@ export default function HomePage() {
             const Icon = cat.icon;
             const isActive = activeCategory === cat.id;
             return (
-              <button key={cat.id} onClick={()=>handleCategoryChange(cat.id)}
+              <button key={cat.id} onClick={() => handleCategoryChange(cat.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 ${isActive ? `bg-gradient-to-r ${cat.color} text-white shadow-lg shadow-purple-500/25` : "bg-slate-900/50 text-slate-400 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/50"}`}>
                 <Icon className="w-4 h-4" /><span className="text-sm font-medium">{cat.label}</span>
               </button>
@@ -307,7 +307,7 @@ export default function HomePage() {
               {filteredApps.map((app, index) => <AppCard key={app.id} app={app} index={index} />)}
             </>
           ) : (
-            <motion.div className="text-center py-20" initial={{ opacity:0 }} animate={{ opacity:1 }}>
+            <motion.div className="text-center py-20" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-900/50 border border-slate-800 flex items-center justify-center"><Search className="w-10 h-10 text-slate-700" /></div>
               <p className="text-slate-400 text-lg mb-2">{searchTerm ? `No se encontraron resultados para "${searchTerm}"` : "No se encontraron aplicaciones"}</p>
               <p className="text-slate-600 text-sm">{searchTerm ? "Intenta con otro término de búsqueda" : "Vuelve pronto para nuevas apps"}</p>

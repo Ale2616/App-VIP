@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuthStore } from "@/store/auth-store";
-import { supabase } from "@/lib/supabase";
-import { useLogActivity } from "@/hooks/use-visits";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,10 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  ArrowLeft, Upload, Loader2, Link2,
+  ArrowLeft, Upload, Loader2, Link2, ImagePlus, X,
   CheckCircle, Package, Bot, Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+
+const SUPABASE_URL = "https://wzeklbcmloxxvzqtxocq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Irc_VuEUm_TMrVfB9dgf3g_UxAyGRVG";
 
 const uploadSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
@@ -43,10 +44,13 @@ export default function UploadPage() {
 
 function UploadContent() {
   const { profile } = useAuthStore();
-  const logActivity = useLogActivity();
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadStep, setUploadStep] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -64,22 +68,71 @@ function UploadContent() {
     },
   });
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  };
+
   const onSubmit = async (formData: UploadFormData) => {
     setIsSubmitting(true);
+    let imageUrl: string | null = null;
+
     try {
+      // ── Step 1: Upload image to Supabase Storage ──────────
+      if (imageFile) {
+        setUploadStep("Subiendo imagen...");
+        const ext = imageFile.name.split(".").pop() || "png";
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+        const uploadRes = await fetch(
+          `${SUPABASE_URL}/storage/v1/object/app-images/${fileName}`,
+          {
+            method: "POST",
+            headers: {
+              "apikey": SUPABASE_KEY,
+              "Authorization": `Bearer ${SUPABASE_KEY}`,
+              "Content-Type": imageFile.type,
+              "x-upsert": "true",
+            },
+            body: imageFile,
+          }
+        );
+
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json().catch(() => null);
+          throw new Error(
+            (err as any)?.message || `Error al subir imagen (${uploadRes.status})`
+          );
+        }
+
+        // ── Step 2: Get the public URL ──────────────────────
+        imageUrl = `${SUPABASE_URL}/storage/v1/object/public/app-images/${fileName}`;
+        console.log("Imagen subida:", imageUrl);
+      }
+
+      // ── Step 3: Insert into the applications table ────────
+      setUploadStep("Guardando en base de datos...");
       const row = {
-        name:         formData.name,
-        description:  formData.description,
-        version:      formData.version,
-        category:     formData.category,
+        name: formData.name,
+        description: formData.description,
+        version: formData.version,
+        category: formData.category,
         download_url: formData.download_url,
+        image_url: imageUrl,
       };
-      console.log("Enviando:", row);
+      console.log("Insertando:", row);
 
-      const SUPABASE_URL = "https://wzeklbcmloxxvzqtxocq.supabase.co";
-      const SUPABASE_KEY = "sb_publishable_Irc_VuEUm_TMrVfB9dgf3g_UxAyGRVG";
-
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/applications`, {
+      const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/applications`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -90,23 +143,25 @@ function UploadContent() {
         body: JSON.stringify(row),
       });
 
-      const body = await res.json();
+      const body = await dbRes.json();
 
-      if (!res.ok) {
-        console.error("Error REST:", body);
-        alert("Error: " + (body?.message || JSON.stringify(body)));
-        return;
+      if (!dbRes.ok) {
+        console.error("DB Error:", body);
+        throw new Error((body as any)?.message || JSON.stringify(body));
       }
 
-      console.log("Insertado OK:", body);
+      console.log("App insertada:", body);
       setIsSuccess(true);
-      toast.success("¡Aplicación publicada!");
+      toast.success("¡Aplicación publicada exitosamente!");
       reset();
+      clearImage();
     } catch (err: any) {
-      console.error("Catch:", err);
+      console.error("Error:", err);
       alert("Error: " + (err?.message || String(err)));
+      toast.error(err?.message || "Error al publicar");
     } finally {
       setIsSubmitting(false);
+      setUploadStep("");
     }
   };
 
@@ -143,9 +198,7 @@ function UploadContent() {
                 <Upload className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">
-                  Publicar App
-                </h1>
+                <h1 className="text-xl font-bold text-white">Publicar App</h1>
                 <p className="text-xs text-slate-500">
                   Agrega aplicaciones al catálogo
                 </p>
@@ -217,9 +270,70 @@ function UploadContent() {
                   onSubmit={handleSubmit(onSubmit)}
                   className="space-y-6"
                 >
+                  {/* Image Upload */}
+                  <div className="space-y-2">
+                    <Label className="text-white text-sm flex items-center gap-2">
+                      <ImagePlus className="w-4 h-4 text-purple-400" />
+                      Imagen / Captura de pantalla
+                    </Label>
+                    <div
+                      onClick={() => imageInputRef.current?.click()}
+                      className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all duration-200 ${imagePreview
+                          ? "border-emerald-500/50 bg-emerald-500/5"
+                          : "border-slate-700 hover:border-slate-600 bg-slate-950/50"
+                        }`}
+                    >
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                      />
+                      {imagePreview ? (
+                        <div className="relative">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-full h-48 object-cover rounded-lg shadow-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearImage();
+                            }}
+                            className="absolute top-2 right-2 p-1.5 bg-red-500/90 rounded-full text-white hover:bg-red-600 transition-colors shadow-lg"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                          <div className="mt-2 flex items-center justify-center gap-2 text-sm text-emerald-400">
+                            <CheckCircle className="w-4 h-4" />
+                            {imageFile?.name}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 py-4">
+                          <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700">
+                            <ImagePlus className="w-8 h-8 text-slate-500" />
+                          </div>
+                          <p className="text-slate-400 text-sm">
+                            Toca para seleccionar una imagen
+                          </p>
+                          <p className="text-xs text-slate-600">
+                            JPG, PNG, WebP (recomendado 16:9)
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Name */}
                   <div className="space-y-2">
-                    <Label htmlFor="app-name" className="text-white text-sm flex items-center gap-2">
+                    <Label
+                      htmlFor="app-name"
+                      className="text-white text-sm flex items-center gap-2"
+                    >
                       📦 Nombre de la aplicación
                     </Label>
                     <Input
@@ -237,9 +351,11 @@ function UploadContent() {
 
                   {/* Version + Category row */}
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Version */}
                     <div className="space-y-2">
-                      <Label htmlFor="app-version" className="text-white text-sm flex items-center gap-2">
+                      <Label
+                        htmlFor="app-version"
+                        className="text-white text-sm flex items-center gap-2"
+                      >
                         🏷️ Versión
                       </Label>
                       <Input
@@ -255,9 +371,11 @@ function UploadContent() {
                       )}
                     </div>
 
-                    {/* Category */}
                     <div className="space-y-2">
-                      <Label htmlFor="app-category" className="text-white text-sm flex items-center gap-2">
+                      <Label
+                        htmlFor="app-category"
+                        className="text-white text-sm flex items-center gap-2"
+                      >
                         📂 Categoría
                       </Label>
                       <select
@@ -278,7 +396,10 @@ function UploadContent() {
 
                   {/* Download URL */}
                   <div className="space-y-2">
-                    <Label htmlFor="app-download-url" className="text-white text-sm flex items-center gap-2">
+                    <Label
+                      htmlFor="app-download-url"
+                      className="text-white text-sm flex items-center gap-2"
+                    >
                       <Link2 className="w-4 h-4 text-cyan-400" />
                       Enlace de descarga
                     </Label>
@@ -302,7 +423,10 @@ function UploadContent() {
 
                   {/* Description */}
                   <div className="space-y-2">
-                    <Label htmlFor="app-description" className="text-white text-sm flex items-center gap-2">
+                    <Label
+                      htmlFor="app-description"
+                      className="text-white text-sm flex items-center gap-2"
+                    >
                       📝 Descripción
                     </Label>
                     <Textarea
@@ -333,7 +457,7 @@ function UploadContent() {
                       {isSubmitting ? (
                         <>
                           <Loader2 className="h-5 w-5 animate-spin" />
-                          Publicando...
+                          {uploadStep || "Publicando..."}
                         </>
                       ) : (
                         <>
