@@ -233,7 +233,7 @@ export default function HomePage() {
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Panel Pro — siempre visible */}
-            <Link href="/admin">
+            <Link href="/admin-panel">
               <Button size="sm" className="bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-semibold shadow-lg shadow-amber-500/20 px-2.5 sm:px-4">
                 <Crown className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Panel Pro</span>
