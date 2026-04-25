@@ -95,7 +95,7 @@ function UploadContent() {
         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
         const uploadRes = await fetch(
-          `${SUPABASE_URL}/storage/v1/object/app-images/${fileName}`,
+          `${SUPABASE_URL}/storage/v1/object/APP-IMAGES/${fileName}`,
           {
             method: "POST",
             headers: {
@@ -116,7 +116,7 @@ function UploadContent() {
         }
 
         // ── Step 2: Get the public URL ──────────────────────
-        imageUrl = `${SUPABASE_URL}/storage/v1/object/public/app-images/${fileName}`;
+        imageUrl = `${SUPABASE_URL}/storage/v1/object/public/APP-IMAGES/${fileName}`;
         console.log("Imagen subida:", imageUrl);
       }
 

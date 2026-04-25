@@ -24,7 +24,7 @@ import type { App } from "@/types";
 const SUPABASE_URL = "https://wzeklbcmloxxvzqtxocq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Irc_VuEUm_TMrVfB9dgf3g_UxAyGRVG";
 const TABLE = "applications";
-const BUCKET = "app-images";
+const BUCKET = "APP-IMAGES";
 
 const headers = {
   apikey: SUPABASE_KEY,
