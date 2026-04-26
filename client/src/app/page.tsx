@@ -270,7 +270,7 @@ export default function HomePage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-white truncate">{profile?.name}</p>
-                              <p className="text-xs text-purple-300 font-medium">{profile?.role === 'admin' ? '👑 Administrador' : 'Usuario'}</p>
+                              <p className="text-xs text-purple-300 font-medium">👑 Administrador</p>
                             </div>
                           </div>
                         </div>
@@ -287,7 +287,7 @@ export default function HomePage() {
                             <div className="p-1.5 rounded-lg bg-slate-800/50"><Shield className="w-3.5 h-3.5 text-emerald-400" /></div>
                             <div>
                               <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Rol</p>
-                              <p className="text-slate-300 text-xs">{profile?.role === 'admin' ? 'Administrador' : 'Usuario estándar'}</p>
+                              <p className="text-slate-300 text-xs">Administrador</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3 text-sm">
