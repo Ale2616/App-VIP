@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Download, Crown, LogOut, User, TrendingUp, Gamepad2, AppWindow,
   Bot, Search, X, Star, Zap, Shield, Globe, ChevronRight, Rocket,
-  Sparkles, Upload,
+  Sparkles, Upload, Mail, Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { App } from "@/types";
@@ -200,6 +200,7 @@ export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [showHero, setShowHero] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
 
   const category = activeCategory === "all" || activeCategory === "popular" || activeCategory === "most-downloaded" ? undefined : activeCategory;
   const mostDownloaded = activeCategory === "most-downloaded" || activeCategory === "popular";
@@ -248,9 +249,58 @@ export default function HomePage() {
                     <span className="hidden sm:inline">Subir</span>
                   </Button>
                 </Link>
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/50 border border-slate-800">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center"><User className="w-3 h-3 text-white" /></div>
-                  <span className="text-sm text-slate-300">{profile?.name}</span>
+                <div className="relative hidden sm:block">
+                  <button
+                    onClick={() => setShowProfile(!showProfile)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/50 border border-slate-800 hover:border-purple-500/30 hover:bg-slate-800/50 transition-all cursor-pointer"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center"><User className="w-3 h-3 text-white" /></div>
+                    <span className="text-sm text-slate-300">{profile?.name}</span>
+                  </button>
+
+                  {showProfile && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)} />
+                      <div className="absolute right-0 top-full mt-2 w-72 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-purple-900/20 z-50 overflow-hidden">
+                        {/* Header del perfil */}
+                        <div className="p-5 bg-gradient-to-br from-purple-500/10 to-fuchsia-500/10 border-b border-slate-800/50">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                              <User className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-white truncate">{profile?.name}</p>
+                              <p className="text-xs text-purple-300 font-medium">{profile?.role === 'admin' ? '👑 Administrador' : 'Usuario'}</p>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Datos del perfil */}
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-center gap-3 text-sm">
+                            <div className="p-1.5 rounded-lg bg-slate-800/50"><Mail className="w-3.5 h-3.5 text-purple-400" /></div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Correo</p>
+                              <p className="text-slate-300 text-xs truncate">{profile?.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm">
+                            <div className="p-1.5 rounded-lg bg-slate-800/50"><Shield className="w-3.5 h-3.5 text-emerald-400" /></div>
+                            <div>
+                              <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Rol</p>
+                              <p className="text-slate-300 text-xs">{profile?.role === 'admin' ? 'Administrador' : 'Usuario estándar'}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm">
+                            <div className="p-1.5 rounded-lg bg-slate-800/50"><Calendar className="w-3.5 h-3.5 text-amber-400" /></div>
+                            <div>
+                              <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Miembro desde</p>
+                              <p className="text-slate-300 text-xs">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <Button variant="destructive" size="sm" onClick={() => { logout(); toast.info("Sesión cerrada"); }} className="bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-600/30 px-2.5">
                   <LogOut className="w-4 h-4" />
