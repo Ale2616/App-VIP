@@ -249,13 +249,13 @@ export default function HomePage() {
                     <span className="hidden sm:inline">Subir</span>
                   </Button>
                 </Link>
-                <div className="relative hidden sm:block">
+                <div className="relative">
                   <button
                     onClick={() => setShowProfile(!showProfile)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/50 border border-slate-800 hover:border-purple-500/30 hover:bg-slate-800/50 transition-all cursor-pointer"
+                    className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-900/50 border border-slate-800 hover:border-purple-500/30 hover:bg-slate-800/50 transition-all cursor-pointer"
                   >
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center"><User className="w-3 h-3 text-white" /></div>
-                    <span className="text-sm text-slate-300">{profile?.name}</span>
+                    <span className="hidden sm:inline text-sm text-slate-300">{profile?.name}</span>
                   </button>
 
                   {showProfile && (
