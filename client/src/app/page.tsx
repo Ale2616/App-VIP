@@ -243,12 +243,6 @@ export default function HomePage() {
 
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
-                <Link href="/upload">
-                  <Button size="sm" className="bg-gradient-to-r from-emerald-500 to-cyan-600 shadow-lg shadow-emerald-500/20 px-2.5 sm:px-4">
-                    <Upload className="w-4 h-4 sm:mr-1" />
-                    <span className="hidden sm:inline">Subir</span>
-                  </Button>
-                </Link>
                 <div className="relative">
                   <button
                     onClick={() => setShowProfile(!showProfile)}
