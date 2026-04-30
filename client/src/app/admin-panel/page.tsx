@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/store/auth-store";
 import {
   Plus, Pencil, Trash2, ExternalLink, Loader2,
   Image as ImageIcon, X, Search, AlertTriangle,
@@ -14,11 +15,6 @@ const SYSTEM_CONFIG = {
   BUCKET_NAME: "app-images",
   TABLE_NAME: "applications",
 };
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 interface Application {
   id: string;
@@ -41,6 +37,7 @@ interface UserProfile {
 }
 
 export default function AdminPanel() {
+  const { isAdmin } = useAuthStore();
   const [apps, setApps] = useState<Application[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +106,10 @@ export default function AdminPanel() {
   }, [apps, searchTerm, activeCategory]);
 
   const deleteApp = async (id: string) => {
+    if (!isAdmin) {
+      setNotification({ msg: "Acceso denegado. Solo administradores pueden eliminar aplicaciones.", type: "error" });
+      return;
+    }
     if (!confirm("¿Seguro que quieres eliminar esta aplicación?")) return;
     try {
       const { error } = await supabase.from(SYSTEM_CONFIG.TABLE_NAME).delete().eq("id", id);
@@ -392,6 +393,7 @@ export default function AdminPanel() {
 // ==========================================
 
 function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose: () => void; onSaved: () => void }) {
+  const { isAdmin } = useAuthStore();
   const [saving, setSaving] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(app?.image_url || null);
@@ -411,6 +413,10 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      alert("Acceso denegado. Solo administradores pueden guardar o editar aplicaciones.");
+      return;
+    }
     setSaving(true);
     try {
       let finalImageUrl = formData.image_url;
