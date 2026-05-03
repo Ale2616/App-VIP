@@ -85,25 +85,22 @@ export const appsApi = {
     return { message: "Aplicación eliminada" };
   },
 
+  // Usa la función RPC para incrementar descargas
+  // Esto funciona para TODOS (incluso visitantes sin cuenta)
+  // porque la función tiene SECURITY DEFINER
   trackDownload: async (id: string): Promise<{ download_url: string }> => {
     const { data: app, error: fetchError } = await supabase
       .from("applications")
-      .select("download_count, download_url")
+      .select("download_url")
       .eq("id", id)
       .single();
 
     if (fetchError || !app) throw new Error("App not found");
 
-    // Supabase RPC is normally recommended for this, but we'll try a regular update.
-    // If the RLS blocks it (e.g., for anon users), we'll silently catch the error
-    // so the download still proceeds.
-    await supabase
-      .from("applications")
-      .update({ download_count: (app.download_count || 0) + 1 })
-      .eq("id", id)
-      .then(({ error }) => {
-        if (error) console.warn("No permission to update download count");
-      });
+    // Llamar a la función RPC en lugar de hacer UPDATE directo
+    await supabase.rpc("increment_download", { app_id: id }).then(({ error }) => {
+      if (error) console.warn("Could not track download:", error.message);
+    });
 
     return { download_url: app.download_url || "" };
   },
@@ -116,4 +113,3 @@ export const appsApi = {
     throw new Error("Upload de imágenes deshabilitado.");
   },
 };
-
