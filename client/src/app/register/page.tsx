@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
@@ -71,15 +71,22 @@ export default function RegisterPage() {
   });
   const password = watch("password");
 
-  const onSubmit = useCallback(async (data: RegisterFormData) => {
+  // ═══ FIX: Eliminado useCallback — era problemático con registerMutation como dep ═══
+  const onSubmit = async (data: RegisterFormData) => {
+    console.log("📋 [REGISTRO] Formulario enviado con datos:", { name: data.name, email: data.email, passwordLength: data.password.length });
     try {
+      console.log("🚀 [REGISTRO] Llamando a registerMutation.mutateAsync...");
       await registerMutation.mutateAsync(data);
+      console.log("✅ [REGISTRO] Registro exitoso!");
       setIsSuccess(true);
       toast.success("¡Cuenta creada exitosamente!");
     } catch (error: any) {
+      console.error("❌ [REGISTRO] Error capturado:", error);
+      console.error("❌ [REGISTRO] Mensaje:", error?.message);
+      console.error("❌ [REGISTRO] Código:", error?.code);
       toast.error(error?.message || "Error al registrarse");
     }
-  }, [registerMutation]);
+  };
 
   const features = [
     { icon: UserPlus, text: "Registro rápido" },
@@ -117,7 +124,18 @@ export default function RegisterPage() {
                   <p className="text-sm text-slate-400">Redirigiendo al inicio...</p>
                 </motion.div>
               ) : (
-                <motion.form key="form" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                <motion.form
+                  key="form"
+                  initial={{ opacity:0 }}
+                  animate={{ opacity:1 }}
+                  exit={{ opacity:0 }}
+                  onSubmit={(e) => {
+                    console.log("🔥 [FORM] onSubmit del form se disparó!");
+                    e.preventDefault();
+                    handleSubmit(onSubmit)(e);
+                  }}
+                  className="space-y-5"
+                >
                   {/* Name */}
                   <div className="space-y-2">
                     <Label htmlFor="register-name" className="text-white flex items-center gap-2">👤 Nombre</Label>
@@ -147,8 +165,14 @@ export default function RegisterPage() {
                     {errors.password && <p className="text-sm text-red-400">{errors.password.message}</p>}
                   </div>
 
-                  {/* SUBMIT — STATIC BUTTON — NO translate, NO scale, NO magnetic effect */}
-                  <button id="register-submit-btn" type="submit" disabled={registerMutation.isPending} className="w-full h-12 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-pink-500 hover:from-fuchsia-600 hover:via-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg disabled:opacity-70 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer">
+                  {/* SUBMIT */}
+                  <button
+                    id="register-submit-btn"
+                    type="submit"
+                    disabled={registerMutation.isPending}
+                    onClick={() => console.log("👆 [BOTÓN] Click detectado en botón Crear Cuenta")}
+                    className="w-full h-12 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-pink-500 hover:from-fuchsia-600 hover:via-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg disabled:opacity-70 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+                  >
                     <span className="flex items-center justify-center gap-2">
                       {registerMutation.isPending ? (<><Loader2 className="h-5 w-5 animate-spin"/>Creando cuenta...</>) : (<>Crear Cuenta <ArrowRight className="h-5 w-5"/></>)}
                     </span>
