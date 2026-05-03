@@ -107,7 +107,7 @@ export const metadata: Metadata = {
 
   // ─── Verificación Google Search Console ────────────────
   verification: {
-    google: "googlef928f40d022c38e0",
+    google: "n1zBtL_y2eOufZ6TcamlXcltJ2kIxUdtJ72N7ATlK8w",
   },
 }
 
