@@ -104,15 +104,16 @@ export const metadata: Metadata = {
 
   // ─── Categoría y clasificación ────────────────────────
   category: "Technology",
+
+  // ─── Verificación Google Search Console ────────────────
+  verification: {
+    google: "googlef928f40d022c38e0",
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={cn("font-sans", geist.variable)}>
-      <head>
-        {/* Verificación de Google Search Console — reemplaza XXXXXXXX con tu código */}
-        {/* <meta name="google-site-verification" content="XXXXXXXX" /> */}
-      </head>
       <body className={inter.className}>
         <QueryProvider>
           <AuthProvider>

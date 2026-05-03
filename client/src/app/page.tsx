@@ -264,7 +264,7 @@ export default function HomePage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-white truncate">{profile?.name}</p>
-                              <p className="text-xs text-purple-300 font-medium">👑 Administrador</p>
+                              <p className="text-xs text-purple-300 font-medium">{profile?.role === 'admin' ? '👑 Administrador' : '👤 Usuario'}</p>
                             </div>
                           </div>
                         </div>
@@ -274,21 +274,21 @@ export default function HomePage() {
                             <div className="p-1.5 rounded-lg bg-slate-800/50"><Mail className="w-3.5 h-3.5 text-purple-400" /></div>
                             <div className="flex-1 min-w-0">
                               <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Correo</p>
-                              <p className="text-slate-300 text-xs truncate">{profile?.email}</p>
+                              <p className="text-slate-300 text-xs truncate">{profile?.email || 'No disponible'}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3 text-sm">
                             <div className="p-1.5 rounded-lg bg-slate-800/50"><Shield className="w-3.5 h-3.5 text-emerald-400" /></div>
                             <div>
                               <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Rol</p>
-                              <p className="text-slate-300 text-xs">Administrador</p>
+                              <p className="text-slate-300 text-xs">{profile?.role === 'admin' ? 'Administrador' : 'Usuario'}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3 text-sm">
                             <div className="p-1.5 rounded-lg bg-slate-800/50"><Calendar className="w-3.5 h-3.5 text-amber-400" /></div>
                             <div>
                               <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Miembro desde</p>
-                              <p className="text-slate-300 text-xs">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'}</p>
+                              <p className="text-slate-300 text-xs">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' }) : 'Reciente'}</p>
                             </div>
                           </div>
                         </div>

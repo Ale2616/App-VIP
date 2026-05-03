@@ -3,6 +3,21 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { useAuthStore } from "@/store/auth-store";
 import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
+import type { Profile } from "@/types";
+
+/**
+ * Enriquece el perfil de la base de datos con datos de la sesión de Supabase Auth.
+ * Esto asegura que email y created_at siempre tengan valor,
+ * incluso si la tabla profiles no los tiene populados.
+ */
+function enrichProfile(profile: Profile, authUser: User): Profile {
+  return {
+    ...profile,
+    email: profile.email || authUser.email || "",
+    created_at: profile.created_at || authUser.created_at || new Date().toISOString(),
+  };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { setProfile, clearAuth, setLoading } = useAuthStore();
@@ -28,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .single();
 
           if (profile) {
-            setProfile(profile);
+            setProfile(enrichProfile(profile, session.user));
           } else {
             clearAuth();
           }
@@ -54,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .single();
 
         if (profile) {
-          setProfile(profile);
+          setProfile(enrichProfile(profile, session.user));
         }
       } else if (event === "SIGNED_OUT") {
         clearAuth();
