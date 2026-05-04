@@ -12,7 +12,7 @@ import {
 import Link from "next/link";
 
 const SYSTEM_CONFIG = {
-  BUCKET_NAME: "app-images",
+  BUCKET_NAME: "applications-images",
   TABLE_NAME: "applications",
 };
 
@@ -394,25 +394,51 @@ export default function AdminPanel() {
 // COMPONENTE MODAL
 // ==========================================
 
+type ScreenshotItem = { id: string; file?: File; url: string; };
+
 function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose: () => void; onSaved: () => void }) {
   const { isAdmin } = useAuthStore();
   const [saving, setSaving] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(app?.icon_url || app?.image_url || null);
+  const [screenshots, setScreenshots] = useState<ScreenshotItem[]>(
+    (app?.screenshots || []).map(url => ({ id: url, url }))
+  );
   const [formData, setFormData] = useState({
     name: app?.name || "",
     description: app?.description || "",
     version: app?.version || "1.0.0",
     category: app?.category || "Aplicación",
     download_url: app?.download_url || "",
-    icon_url: app?.icon_url || "",
     image_url: app?.image_url || "",
-    screenshots: app?.screenshots ? app.screenshots.join(", ") : "",
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) { setFile(f); setPreview(URL.createObjectURL(f)); }
+  };
+
+  const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const newItems = files.map(f => ({
+      id: Math.random().toString(36).substring(7),
+      file: f,
+      url: URL.createObjectURL(f)
+    }));
+    setScreenshots(prev => [...prev, ...newItems]);
+  };
+
+  const removeScreenshot = (id: string) => {
+    setScreenshots(prev => prev.filter(s => s.id !== id));
+  };
+
+  const handleUpload = async (fileToUpload: File) => {
+    const fileExt = fileToUpload.name.split(".").pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage.from(SYSTEM_CONFIG.BUCKET_NAME).upload(fileName, fileToUpload);
+    if (uploadError) throw new Error("Error al subir imagen: " + uploadError.message);
+    const { data: urlData } = supabase.storage.from(SYSTEM_CONFIG.BUCKET_NAME).getPublicUrl(fileName);
+    return urlData.publicUrl;
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -423,22 +449,30 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
     }
     setSaving(true);
     try {
+      let finalIconUrl = app?.icon_url || "";
       let finalImageUrl = formData.image_url;
-      let finalIconUrl = formData.icon_url;
+
       if (file) {
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from(SYSTEM_CONFIG.BUCKET_NAME).upload(fileName, file);
-        if (uploadError) throw new Error("Error al subir imagen: " + uploadError.message);
-        const { data: urlData } = supabase.storage.from(SYSTEM_CONFIG.BUCKET_NAME).getPublicUrl(fileName);
-        finalIconUrl = urlData.publicUrl; // Usamos el archivo subido como icono (Logo)
-      }
-      let screenshotsArray: string[] = [];
-      if (formData.screenshots.trim()) {
-        screenshotsArray = formData.screenshots.split(",").map(url => url.trim()).filter(url => url !== "");
+        finalIconUrl = await handleUpload(file);
       }
 
-      const payload = { ...formData, image_url: finalImageUrl, icon_url: finalIconUrl, screenshots: screenshotsArray };
+      const finalScreenshots = [];
+      for (const item of screenshots) {
+        if (item.file) {
+          const uploadedUrl = await handleUpload(item.file);
+          finalScreenshots.push(uploadedUrl);
+        } else {
+          finalScreenshots.push(item.url);
+        }
+      }
+
+      const payload = { 
+        ...formData, 
+        image_url: finalImageUrl, 
+        icon_url: finalIconUrl, 
+        screenshots: finalScreenshots 
+      };
+
       if (app) {
         const { error } = await supabase.from(SYSTEM_CONFIG.TABLE_NAME).update(payload).eq("id", app.id);
         if (error) throw error;
@@ -518,10 +552,24 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Capturas de pantalla (URLs separadas por coma)</label>
-                <textarea placeholder="https://ejemplo.com/foto1.jpg, https://ejemplo.com/foto2.jpg"
-                  className="w-full bg-slate-900/80 border border-slate-700/50 p-3.5 rounded-xl h-24 outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-medium resize-none text-sm leading-relaxed text-slate-300 placeholder:text-slate-600"
-                  value={formData.screenshots} onChange={(e) => setFormData({ ...formData, screenshots: e.target.value })} />
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Capturas de pantalla</label>
+                <div className="bg-slate-900/80 border-2 border-dashed border-slate-700/50 p-4 rounded-xl transition-all hover:border-purple-500/40">
+                  <div className="grid grid-cols-3 gap-3">
+                    {screenshots.map((s) => (
+                      <div key={s.id} className="relative aspect-video rounded-lg overflow-hidden group border border-slate-700">
+                        <img src={s.url} alt="Screenshot" className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => removeScreenshot(s.id)} className="absolute top-1 right-1 p-1 bg-red-500/80 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="relative aspect-video rounded-lg border-2 border-dashed border-slate-700 hover:border-purple-500/40 flex flex-col items-center justify-center cursor-pointer overflow-hidden">
+                      <Plus className="text-slate-500 mb-1" size={20} />
+                      <span className="text-[10px] text-slate-500 font-medium">Añadir</span>
+                      <input type="file" accept="image/*" multiple onChange={handleScreenshotChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -557,13 +605,6 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                 <input type="url" placeholder="https://ejemplo.com/banner.jpg"
                   className="w-full bg-slate-900/80 border border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-medium text-purple-400 text-sm placeholder:text-slate-600"
                   value={formData.image_url} onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">URL del Logo (Opcional si no subes archivo)</label>
-                <input type="url" placeholder="https://ejemplo.com/logo.jpg"
-                  className="w-full bg-slate-900/80 border border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-medium text-purple-400 text-sm placeholder:text-slate-600"
-                  value={formData.icon_url} onChange={(e) => setFormData({ ...formData, icon_url: e.target.value })} />
               </div>
 
               <div className="bg-slate-900/50 border border-slate-800/50 rounded-xl p-4 space-y-2.5">
