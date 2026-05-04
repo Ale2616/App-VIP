@@ -160,117 +160,89 @@ function AppDetailPage() {
           transition={{ duration: 0.5 }}
           className="max-w-5xl mx-auto"
         >
-          {/* App Header */}
-          <Card className="bg-slate-900/60 backdrop-blur-xl border-slate-800/50 mb-6 overflow-hidden">
-            <CardContent className="p-6 md:p-8">
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.2, type: "spring" }}
-                  className="relative shrink-0"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-3xl blur-xl opacity-50" />
-                  {app.icon_url ? (
-                     <img src={app.icon_url} alt={app.name} className="w-28 h-28 md:w-32 md:h-32 rounded-3xl object-cover relative z-10 shadow-2xl" />
-                   ) : (
-                     <div className="w-28 h-28 md:w-32 md:h-32 rounded-3xl bg-slate-800 flex items-center justify-center relative z-10 shadow-2xl"><Bot className="w-12 h-12 text-slate-600" /></div>
-                   )}
-                </motion.div>
-
-                <div className="flex-1">
-                  <motion.h1
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="text-3xl md:text-4xl font-bold text-white mb-3"
-                  >
-                    {app.name}
-                  </motion.h1>
-
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="flex flex-wrap items-center gap-3"
-                  >
-                    <Badge className="bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white border-0">
-                      {app.category}
-                    </Badge>
-                    <span className="text-sm text-slate-400 flex items-center gap-1.5">
-                      <Download className="w-4 h-4 text-green-400" />
-                      {(app.download_count ?? 0).toLocaleString("es-ES")} descargas
-                    </span>
-                    <span className="text-sm text-slate-400 flex items-center gap-1.5">
-                      <Star className="w-4 h-4 text-amber-400" />
-                      Verificada
-                    </span>
-                  </motion.div>
-                </div>
-
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="flex flex-col gap-2"
-                >
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <Shield className="w-4 h-4 text-green-400" />
-                    <span>Segura</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <Zap className="w-4 h-4 text-yellow-400" />
-                    <span>Rápida</span>
-                  </div>
-                </motion.div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Main Image */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="mb-6 relative"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-fuchsia-500/10 rounded-3xl blur-2xl" />
-            {app.image_url ? (
-               <img src={app.image_url} alt={app.name} className="w-full h-64 md:h-96 object-cover rounded-3xl shadow-2xl relative z-10 border border-slate-800/50" />
-             ) : (
-               <div className="w-full h-64 md:h-96 rounded-3xl bg-slate-800/50 flex items-center justify-center relative z-10 border border-slate-800/50"><Bot className="w-20 h-20 text-slate-700" /></div>
-             )}
-          </motion.div>
-
-          {/* Download Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mb-8"
-          >
+          {/* Main Content Layout */}
+          <div className="flex flex-col items-center mb-12">
+            {/* Logo */}
             <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, type: "spring" }}
+              className="relative shrink-0 mb-6"
             >
-              <a
-                href={app.download_url || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => { if (!app.download_url) { e.preventDefault(); toast.error("Sin enlace de descarga"); } else { toast.success("¡Descarga iniciada!"); } }}
-                className="w-full inline-flex items-center justify-center bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 hover:from-green-600 hover:via-emerald-600 hover:to-green-600 py-5 text-lg font-semibold shadow-2xl shadow-green-500/25 hover:shadow-green-500/40 relative overflow-hidden group rounded-lg text-white"
-              >
-                <motion.span
-                  className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
-                  animate={{ x: ["-100%", "100%"] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-                <Download className="w-6 h-6 mr-2" />
-                Descargar Ahora
-                <ExternalLink className="w-5 h-5 ml-2" />
-              </a>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-[2rem] blur-xl opacity-50" />
+              {(app.icon_url || app.image_url) ? (
+                 <img src={app.icon_url || app.image_url || undefined} alt={app.name} className="w-32 h-32 md:w-40 md:h-40 rounded-[2rem] object-cover relative z-10 shadow-2xl border-2 border-slate-800/50" />
+               ) : (
+                 <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2rem] bg-slate-800 flex items-center justify-center relative z-10 shadow-2xl border-2 border-slate-800/50"><Bot className="w-16 h-16 text-slate-600" /></div>
+               )}
             </motion.div>
-          </motion.div>
+
+            {/* Title */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-4xl md:text-5xl font-bold text-white mb-4 text-center"
+            >
+              {app.name}
+            </motion.h1>
+
+            {/* Tags */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex flex-wrap items-center justify-center gap-4 mb-8"
+            >
+              <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1 text-sm font-medium">
+                {app.category}
+              </Badge>
+              <div className="flex items-center gap-1.5 text-sm font-medium text-slate-300 bg-slate-900/50 border border-slate-800 rounded-full px-3 py-1">
+                <Download className="w-4 h-4 text-emerald-400" />
+                {(app.download_count ?? 0).toLocaleString("es-ES")} descargas
+              </div>
+              <div className="flex items-center gap-1.5 text-sm font-medium text-slate-300 bg-slate-900/50 border border-slate-800 rounded-full px-3 py-1">
+                <Shield className="w-4 h-4 text-emerald-400" /> Segura
+              </div>
+              <div className="flex items-center gap-1.5 text-sm font-medium text-slate-300 bg-slate-900/50 border border-slate-800 rounded-full px-3 py-1">
+                <Zap className="w-4 h-4 text-amber-400" /> Rápida
+              </div>
+            </motion.div>
+
+            {/* Download Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="w-full max-w-sm mb-8"
+            >
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <a
+                  href={app.download_url || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => { if (!app.download_url) { e.preventDefault(); toast.error("Sin enlace de descarga"); } else { toast.success("¡Descarga iniciada!"); } }}
+                  className="w-full inline-flex items-center justify-center bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 hover:from-green-600 hover:via-emerald-600 hover:to-green-600 py-4 text-lg font-semibold shadow-2xl shadow-green-500/25 hover:shadow-green-500/40 relative overflow-hidden group rounded-2xl text-white transition-all"
+                >
+                  <motion.span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0" animate={{ x: ["-100%", "100%"] }} transition={{ duration: 2, repeat: Infinity }} />
+                  <Download className="w-6 h-6 mr-2" /> Descargar Ahora <ExternalLink className="w-5 h-5 ml-2 opacity-50" />
+                </a>
+              </motion.div>
+            </motion.div>
+
+            {/* Main Image (Optional banner) */}
+            {app.image_url && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6 }}
+                className="w-full relative mt-4"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-fuchsia-500/10 rounded-3xl blur-2xl" />
+                <img src={app.image_url} alt={app.name} className="w-full h-64 md:h-[400px] object-cover rounded-3xl shadow-2xl relative z-10 border border-slate-800/50" />
+              </motion.div>
+            )}
+          </div>
 
           {/* Main Content Grid */}
           <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -404,6 +376,36 @@ function AppDetailPage() {
               </CardContent>
             </Card>
           </motion.div>
+
+          {/* Capturas de Pantalla */}
+          {app.screenshots && app.screenshots.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="mt-12"
+            >
+              <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <Smartphone className="w-6 h-6 text-purple-400" />
+                Capturas de Pantalla
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {app.screenshots.map((screenshot: string, idx: number) => (
+                  <div key={idx} className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500" />
+                    <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800/50">
+                      <img 
+                        src={screenshot} 
+                        alt={`Captura ${idx + 1}`} 
+                        className="w-full aspect-auto md:aspect-[9/16] object-cover transition-transform duration-500 group-hover:scale-105"
+                        style={{ maxHeight: '600px' }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </main>

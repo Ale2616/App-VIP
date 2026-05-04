@@ -19,6 +19,7 @@ export interface App {
   version: string;
   icon_url: string | null;
   image_url: string | null;
+  screenshots?: string[] | null;
   download_url: string | null;
   file_path: string | null;
   file_size: number;

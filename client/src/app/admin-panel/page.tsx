@@ -24,6 +24,8 @@ interface Application {
   category: "Aplicación" | "Juego";
   download_url: string;
   image_url: string;
+  icon_url?: string;
+  screenshots?: string[];
   created_at: string;
   updated_at?: string;
 }
@@ -396,14 +398,16 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
   const { isAdmin } = useAuthStore();
   const [saving, setSaving] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(app?.image_url || null);
+  const [preview, setPreview] = useState<string | null>(app?.icon_url || app?.image_url || null);
   const [formData, setFormData] = useState({
     name: app?.name || "",
     description: app?.description || "",
     version: app?.version || "1.0.0",
     category: app?.category || "Aplicación",
     download_url: app?.download_url || "",
+    icon_url: app?.icon_url || "",
     image_url: app?.image_url || "",
+    screenshots: app?.screenshots ? app.screenshots.join(", ") : "",
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -420,15 +424,21 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
     setSaving(true);
     try {
       let finalImageUrl = formData.image_url;
+      let finalIconUrl = formData.icon_url;
       if (file) {
         const fileExt = file.name.split(".").pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
         const { error: uploadError } = await supabase.storage.from(SYSTEM_CONFIG.BUCKET_NAME).upload(fileName, file);
         if (uploadError) throw new Error("Error al subir imagen: " + uploadError.message);
         const { data: urlData } = supabase.storage.from(SYSTEM_CONFIG.BUCKET_NAME).getPublicUrl(fileName);
-        finalImageUrl = urlData.publicUrl;
+        finalIconUrl = urlData.publicUrl; // Usamos el archivo subido como icono (Logo)
       }
-      const payload = { ...formData, image_url: finalImageUrl };
+      let screenshotsArray: string[] = [];
+      if (formData.screenshots.trim()) {
+        screenshotsArray = formData.screenshots.split(",").map(url => url.trim()).filter(url => url !== "");
+      }
+
+      const payload = { ...formData, image_url: finalImageUrl, icon_url: finalIconUrl, screenshots: screenshotsArray };
       if (app) {
         const { error } = await supabase.from(SYSTEM_CONFIG.TABLE_NAME).update(payload).eq("id", app.id);
         if (error) throw error;
@@ -506,12 +516,19 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                   className="w-full bg-slate-900/80 border border-slate-700/50 p-3.5 rounded-xl h-24 outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-medium resize-none text-sm leading-relaxed text-slate-300 placeholder:text-slate-600"
                   value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
               </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Capturas de pantalla (URLs separadas por coma)</label>
+                <textarea placeholder="https://ejemplo.com/foto1.jpg, https://ejemplo.com/foto2.jpg"
+                  className="w-full bg-slate-900/80 border border-slate-700/50 p-3.5 rounded-xl h-24 outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-medium resize-none text-sm leading-relaxed text-slate-300 placeholder:text-slate-600"
+                  value={formData.screenshots} onChange={(e) => setFormData({ ...formData, screenshots: e.target.value })} />
+              </div>
             </div>
 
             {/* Derecha — Imagen */}
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Imagen / Logo</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Imagen / Logo (Icono)</label>
                 <div className="relative aspect-video bg-slate-900/80 border-2 border-dashed border-slate-700/50 rounded-2xl overflow-hidden group hover:border-purple-500/40 transition-all cursor-pointer">
                   {preview ? (
                     <img src={preview} alt="Vista previa" className="w-full h-full object-cover pointer-events-none" />
@@ -533,6 +550,20 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                     <CheckCircle2 size={13} /> {file.name}
                   </p>
                 )}
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">URL del Banner (Opcional, imagen grande)</label>
+                <input type="url" placeholder="https://ejemplo.com/banner.jpg"
+                  className="w-full bg-slate-900/80 border border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-medium text-purple-400 text-sm placeholder:text-slate-600"
+                  value={formData.image_url} onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">URL del Logo (Opcional si no subes archivo)</label>
+                <input type="url" placeholder="https://ejemplo.com/logo.jpg"
+                  className="w-full bg-slate-900/80 border border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-medium text-purple-400 text-sm placeholder:text-slate-600"
+                  value={formData.icon_url} onChange={(e) => setFormData({ ...formData, icon_url: e.target.value })} />
               </div>
 
               <div className="bg-slate-900/50 border border-slate-800/50 rounded-xl p-4 space-y-2.5">
