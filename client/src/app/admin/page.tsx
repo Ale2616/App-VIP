@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, Trash2, Pencil, Loader2, X, Crown, Package,
   Download, Search, RefreshCw, ExternalLink, ImagePlus,
-  CheckCircle, AlertTriangle, Bot,
+  CheckCircle, AlertTriangle, Bot, Image, Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { App } from "@/types";
@@ -484,10 +484,26 @@ function EditModal({
   onSaved: (app: App) => void;
 }) {
   const [saving, setSaving] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // ── Image (banner) state ──
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(
     app.image_url || null
   );
+
+  // ── Icon (logo) state ──
+  const [newIconFile, setNewIconFile] = useState<File | null>(null);
+  const [iconPreview, setIconPreview] = useState<string | null>(
+    app.icon_url || null
+  );
+
+  // ── Screenshots state ──
+  const [screenshotFiles, setScreenshotFiles] = useState<File[]>([]);
+  const [screenshotPreviews, setScreenshotPreviews] = useState<string[]>(
+    app.screenshots || []
+  );
+  const [uploadingScreenshots, setUploadingScreenshots] = useState(false);
 
   const {
     register,
@@ -513,23 +529,106 @@ function EditModal({
     reader.readAsDataURL(file);
   };
 
+  const handleIconSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNewIconFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setIconPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleScreenshotsSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setScreenshotFiles((prev) => [...prev, ...files]);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () =>
+        setScreenshotPreviews((prev) => [...prev, reader.result as string]);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeScreenshot = (index: number) => {
+    setScreenshotPreviews((prev) => prev.filter((_, i) => i !== index));
+    // Only remove from files if it's a new file (index >= existing screenshots count)
+    const existingCount = (app.screenshots || []).length;
+    if (index >= existingCount) {
+      const fileIndex = index - existingCount;
+      setScreenshotFiles((prev) => prev.filter((_, i) => i !== fileIndex));
+    }
+  };
+
   const onSubmit = async (formData: EditFormData) => {
     setSaving(true);
+    setUploadError(null);
     try {
+      // ── 1. Upload banner image if changed ──
       let imageUrl = app.image_url;
-
-      // If new image selected, upload it and delete old one
       if (newImageFile) {
-        imageUrl = await uploadImage(newImageFile);
-        // Delete old image from storage
-        if (app.image_url) {
-          await deleteStorageFile(app.image_url).catch(() => {});
+        try {
+          imageUrl = await uploadImage(newImageFile);
+          if (app.image_url) {
+            await deleteStorageFile(app.image_url).catch(() => {});
+          }
+        } catch (err: any) {
+          const msg = `Error al subir imagen banner: ${err.message}`;
+          setUploadError(msg);
+          throw new Error(msg);
         }
       }
 
+      // ── 2. Upload icon/logo if changed ──
+      let iconUrl = app.icon_url;
+      if (newIconFile) {
+        try {
+          iconUrl = await uploadImage(newIconFile);
+          if (app.icon_url) {
+            await deleteStorageFile(app.icon_url).catch(() => {});
+          }
+        } catch (err: any) {
+          const msg = `Error al subir logo/icono: ${err.message}`;
+          setUploadError(msg);
+          throw new Error(msg);
+        }
+      }
+
+      // ── 3. Upload new screenshots ──
+      let finalScreenshots: string[] = [];
+      // Keep existing screenshots that are still in previews
+      const existingScreenshots = app.screenshots || [];
+      for (const url of existingScreenshots) {
+        if (screenshotPreviews.includes(url)) {
+          finalScreenshots.push(url);
+        } else {
+          // Deleted by user, remove from storage
+          await deleteStorageFile(url).catch(() => {});
+        }
+      }
+      // Upload new screenshot files
+      if (screenshotFiles.length > 0) {
+        setUploadingScreenshots(true);
+        try {
+          for (const file of screenshotFiles) {
+            const url = await uploadImage(file);
+            finalScreenshots.push(url);
+          }
+        } catch (err: any) {
+          const msg = `Error al subir capturas: ${err.message}`;
+          setUploadError(msg);
+          throw new Error(msg);
+        } finally {
+          setUploadingScreenshots(false);
+        }
+      }
+
+      // ── 4. Save to database ──
       const result = await updateAppRow(app.id, {
         ...formData,
         image_url: imageUrl,
+        icon_url: iconUrl,
+        screenshots: finalScreenshots.length > 0 ? finalScreenshots : null,
       });
 
       const updated = Array.isArray(result) ? result[0] : result;
@@ -537,7 +636,9 @@ function EditModal({
       onSaved(updated);
     } catch (err: any) {
       toast.error(err.message);
-      alert("Error real: " + err.message);
+      if (!uploadError) {
+        setUploadError(err.message);
+      }
     } finally {
       setSaving(false);
     }
@@ -577,11 +678,61 @@ function EditModal({
 
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Image */}
+              {/* Error Banner */}
+              {uploadError && (
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/30">
+                  <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-red-400">Error de subida</p>
+                    <p className="text-xs text-red-400/80 mt-0.5">{uploadError}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUploadError(null)}
+                    className="p-1 rounded hover:bg-red-500/20 text-red-400"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Icon / Logo Upload */}
+              <div className="space-y-2">
+                <Label className="text-white text-sm flex items-center gap-2">
+                  <Image className="w-4 h-4 text-amber-400" />
+                  Logo / Icono
+                </Label>
+                <div className="flex items-center gap-4">
+                  {iconPreview ? (
+                    <img
+                      src={iconPreview}
+                      alt="Icon"
+                      className="w-16 h-16 rounded-xl object-cover shadow-lg border border-slate-700"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-slate-800 flex items-center justify-center border border-slate-700">
+                      <Package className="w-7 h-7 text-slate-600" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleIconSelect}
+                      className="bg-slate-950 border-slate-800 text-xs cursor-pointer"
+                    />
+                    <p className="text-[10px] text-slate-600 mt-1">
+                      Se sube automáticamente al guardar
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Banner Image */}
               <div className="space-y-2">
                 <Label className="text-white text-sm flex items-center gap-2">
                   <ImagePlus className="w-4 h-4 text-purple-400" />
-                  Imagen
+                  Imagen Banner
                 </Label>
                 <div className="flex items-center gap-4">
                   {imagePreview ? (
@@ -666,13 +817,50 @@ function EditModal({
                 <Textarea
                   {...register("description")}
                   rows={3}
+                  placeholder="Describe la aplicación, sus funciones principales..."
                   className="bg-slate-950/50 border-slate-800 text-white resize-none"
                 />
                 {errors.description && (
-                  <p className="text-xs text-red-400">
-                    {errors.description.message}
-                  </p>
+                  <p className="text-xs text-red-400">{errors.description.message}</p>
                 )}
+              </div>
+
+              {/* Screenshots */}
+              <div className="space-y-2">
+                <Label className="text-white text-sm flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-emerald-400" />
+                  Capturas de pantalla
+                </Label>
+                {screenshotPreviews.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {screenshotPreviews.map((src, i) => (
+                      <div key={i} className="relative group">
+                        <img
+                          src={src}
+                          alt={`Captura ${i + 1}`}
+                          className="w-full h-20 rounded-lg object-cover border border-slate-700"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeScreenshot(i)}
+                          className="absolute -top-1.5 -right-1.5 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleScreenshotsSelect}
+                  className="bg-slate-950 border-slate-800 text-xs cursor-pointer"
+                />
+                <p className="text-[10px] text-slate-600">
+                  Selecciona múltiples imágenes. Se suben al guardar.
+                </p>
               </div>
 
               {/* Actions */}
