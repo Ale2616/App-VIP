@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Download, Crown, LogOut, User, TrendingUp, Gamepad2, AppWindow,
   Bot, Search, X, Star, Zap, Shield, Globe, ChevronRight, Rocket,
-  Sparkles, Upload, Mail, Calendar,
+  Sparkles, Upload, Mail, Calendar, MessageSquare, Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { App } from "@/types";
@@ -145,7 +145,7 @@ function Footer() {
   return (
     <footer className="border-t border-slate-800/50 bg-slate-950/50 backdrop-blur-xl mt-20">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-lg"><Bot className="w-5 h-5 text-white" /></div>
@@ -157,7 +157,27 @@ function Footer() {
             <h4 className="text-white font-semibold mb-4">Enlaces Rápidos</h4>
             <ul className="space-y-2 text-sm text-slate-400">
               <li><Link href="/" className="hover:text-purple-400 transition-colors">Inicio</Link></li>
-              <li><Link href="/upload" className="hover:text-purple-400 transition-colors">Subir App</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-white font-semibold mb-4">Contacto</h4>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <a href="https://wa.me/qr/3G6KTSTUJWU6A1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-green-400 transition-colors">
+                  <div className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <MessageSquare className="w-4 h-4 text-green-400" />
+                  </div>
+                  WhatsApp
+                </a>
+              </li>
+              <li>
+                <a href="https://t.me/Juan17990" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors">
+                  <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <Send className="w-4 h-4 text-blue-400" />
+                  </div>
+                  Telegram
+                </a>
+              </li>
             </ul>
           </div>
           <div>
