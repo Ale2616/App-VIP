@@ -111,6 +111,9 @@ export default function AdminPanel() {
 
     setUploadingLogo(true);
     try {
+      console.log("📤 Subiendo logo al bucket:", SYSTEM_CONFIG.BUCKET_NAME);
+
+      // 1. Subir imagen al storage
       const ext = file.name.split(".").pop() || "png";
       const fileName = `logo-${Date.now()}.${ext}`;
 
@@ -118,27 +121,46 @@ export default function AdminPanel() {
         .from(SYSTEM_CONFIG.BUCKET_NAME)
         .upload(fileName, file, { upsert: true });
 
-      if (uploadError) throw new Error("Error al subir: " + uploadError.message);
+      if (uploadError) {
+        console.error("❌ Storage error:", uploadError);
+        throw new Error("Error al subir imagen: " + (uploadError.message || JSON.stringify(uploadError)));
+      }
 
       const { data: urlData } = supabase.storage
         .from(SYSTEM_CONFIG.BUCKET_NAME)
         .getPublicUrl(fileName);
 
       const publicUrl = urlData.publicUrl;
+      console.log("✅ Imagen subida:", publicUrl);
 
-      // Upsert into site_settings
-      const { error: dbError } = await supabase
+      // 2. Guardar URL en site_settings (id=1)
+      // Intentar update primero, si no existe la fila, hacer insert
+      const { error: updateError } = await supabase
         .from("site_settings")
-        .upsert({ id: 1, logo_url: publicUrl }, { onConflict: "id" });
+        .update({ logo_url: publicUrl })
+        .eq("id", 1);
 
-      if (dbError) throw new Error("Error guardando en BD: " + dbError.message);
+      if (updateError) {
+        console.warn("⚠️ Update falló, intentando insert:", updateError.message);
+        const { error: insertError } = await supabase
+          .from("site_settings")
+          .insert({ id: 1, logo_url: publicUrl });
 
+        if (insertError) {
+          console.error("❌ DB error:", insertError);
+          throw new Error("Error guardando en BD: " + (insertError.message || JSON.stringify(insertError)));
+        }
+      }
+
+      console.log("✅ Logo guardado en site_settings");
       setSiteLogoUrl(publicUrl);
       setNotification({ msg: "¡Logotipo actualizado exitosamente!", type: "success" });
     } catch (err: any) {
-      console.error("Error subiendo logo:", err);
-      setNotification({ msg: "Error al cambiar logo: " + err.message, type: "error" });
+      console.error("❌ Error completo en handleLogoUpload:", err);
+      alert("Error al subir logo: " + (err?.message || "Error desconocido"));
+      setNotification({ msg: "Error: " + (err?.message || "Error desconocido"), type: "error" });
     } finally {
+      // SIEMPRE liberar el spinner
       setUploadingLogo(false);
     }
   };
