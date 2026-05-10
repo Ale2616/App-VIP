@@ -12,7 +12,7 @@ import {
 import Link from "next/link";
 
 const SYSTEM_CONFIG = {
-  BUCKET_NAME: "applications-images",
+  BUCKET_NAME: "app-images",
   TABLE_NAME: "applications",
 };
 
@@ -432,58 +432,114 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
     setScreenshots(prev => prev.filter(s => s.id !== id));
   };
 
-  const handleUpload = async (fileToUpload: File) => {
-    const fileExt = fileToUpload.name.split(".").pop();
+  const handleUpload = async (fileToUpload: File): Promise<string> => {
+    const fileExt = fileToUpload.name.split(".").pop() || "png";
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const { error: uploadError } = await supabase.storage.from(SYSTEM_CONFIG.BUCKET_NAME).upload(fileName, fileToUpload);
-    if (uploadError) throw new Error("Error al subir imagen: " + uploadError.message);
-    const { data: urlData } = supabase.storage.from(SYSTEM_CONFIG.BUCKET_NAME).getPublicUrl(fileName);
+
+    console.log(`📤 Subiendo "${fileToUpload.name}" al bucket "${SYSTEM_CONFIG.BUCKET_NAME}" como "${fileName}"...`);
+
+    const { error: uploadError } = await supabase.storage
+      .from(SYSTEM_CONFIG.BUCKET_NAME)
+      .upload(fileName, fileToUpload, { upsert: true });
+
+    if (uploadError) {
+      console.error("❌ Error de Storage:", uploadError);
+      throw new Error("Error al subir imagen: " + (uploadError.message || JSON.stringify(uploadError)));
+    }
+
+    const { data: urlData } = supabase.storage
+      .from(SYSTEM_CONFIG.BUCKET_NAME)
+      .getPublicUrl(fileName);
+
+    console.log("✅ Imagen subida OK:", urlData.publicUrl);
     return urlData.publicUrl;
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!isAdmin) {
       alert("Acceso denegado. Solo administradores pueden guardar o editar aplicaciones.");
       return;
     }
+
     setSaving(true);
     try {
+      // ── 1. Subir icono/logo si se seleccionó un archivo ──
       let finalIconUrl = app?.icon_url || "";
-      let finalImageUrl = formData.image_url;
-
       if (file) {
-        finalIconUrl = await handleUpload(file);
+        try {
+          console.log("📤 Paso 1: Subiendo icono...");
+          finalIconUrl = await handleUpload(file);
+        } catch (uploadErr: any) {
+          console.error("❌ Error subiendo icono:", uploadErr);
+          alert("Error al subir el icono: " + uploadErr.message);
+          throw uploadErr;
+        }
       }
 
-      const finalScreenshots = [];
-      for (const item of screenshots) {
+      // ── 2. Subir capturas de pantalla ──
+      const finalScreenshots: string[] = [];
+      for (let i = 0; i < screenshots.length; i++) {
+        const item = screenshots[i];
         if (item.file) {
-          const uploadedUrl = await handleUpload(item.file);
-          finalScreenshots.push(uploadedUrl);
+          try {
+            console.log(`📤 Paso 2: Subiendo captura ${i + 1}/${screenshots.length}...`);
+            const uploadedUrl = await handleUpload(item.file);
+            finalScreenshots.push(uploadedUrl);
+          } catch (uploadErr: any) {
+            console.error(`❌ Error subiendo captura ${i + 1}:`, uploadErr);
+            alert(`Error al subir captura ${i + 1}: ` + uploadErr.message);
+            throw uploadErr;
+          }
         } else {
+          // Captura existente (ya tiene URL)
           finalScreenshots.push(item.url);
         }
       }
 
-      const payload = { 
-        ...formData, 
-        image_url: finalImageUrl, 
-        icon_url: finalIconUrl, 
-        screenshots: finalScreenshots 
+      // ── 3. Guardar en base de datos ──
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        version: formData.version,
+        category: formData.category,
+        download_url: formData.download_url,
+        image_url: formData.image_url,
+        icon_url: finalIconUrl,
+        screenshots: finalScreenshots,
       };
 
+      console.log("📝 Paso 3: Guardando en BD...", payload);
+
       if (app) {
-        const { error } = await supabase.from(SYSTEM_CONFIG.TABLE_NAME).update(payload).eq("id", app.id);
-        if (error) throw error;
+        // Actualizar app existente
+        const { error: dbError } = await supabase
+          .from(SYSTEM_CONFIG.TABLE_NAME)
+          .update(payload)
+          .eq("id", app.id);
+        if (dbError) {
+          console.error("❌ Error de BD (update):", dbError);
+          throw new Error("Error al actualizar en BD: " + (dbError.message || JSON.stringify(dbError)));
+        }
       } else {
-        const { error } = await supabase.from(SYSTEM_CONFIG.TABLE_NAME).insert([payload]);
-        if (error) throw error;
+        // Crear nueva app
+        const { error: dbError } = await supabase
+          .from(SYSTEM_CONFIG.TABLE_NAME)
+          .insert([payload]);
+        if (dbError) {
+          console.error("❌ Error de BD (insert):", dbError);
+          throw new Error("Error al insertar en BD: " + (dbError.message || JSON.stringify(dbError)));
+        }
       }
+
+      console.log("✅ Aplicación guardada exitosamente");
       onSaved();
     } catch (err: any) {
-      alert("Error: " + err.message);
+      console.error("❌ Error completo en handleSave:", err);
+      alert("Error al guardar: " + (err?.message || "Error desconocido"));
     } finally {
+      // SIEMPRE liberar el botón, pase lo que pase
       setSaving(false);
     }
   };
