@@ -11,6 +11,14 @@ export interface Profile {
 // Legacy alias for backward compatibility
 export type User = Profile;
 
+// ─── Download Options ───────────────────────────────────
+export interface DownloadOption {
+  title: string;
+  version: string;
+  size: string;
+  url: string;
+}
+
 // ─── Apps ───────────────────────────────────────────────
 export interface App {
   id: string;
@@ -21,6 +29,7 @@ export interface App {
   image_url: string | null;
   screenshots?: string[] | null;
   download_url: string | null;
+  download_options?: DownloadOption[] | null;
   file_path: string | null;
   file_size: number;
   category: string;

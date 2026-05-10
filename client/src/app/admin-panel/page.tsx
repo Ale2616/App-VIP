@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/auth-store";
 import {
-  Plus, Pencil, Trash2, ExternalLink, Loader2,
+  Plus, Pencil, Trash2, ExternalLink, Loader2, Download,
   Image as ImageIcon, X, Search, AlertTriangle,
   CheckCircle2, Database, Zap, ArrowLeft, Crown,
   Sparkles, AppWindow, Gamepad2, Bot, Users, Shield, Mail,
@@ -17,6 +17,14 @@ const SYSTEM_CONFIG = {
   TABLE_NAME: "applications",
 };
 
+interface DownloadOptionItem {
+  id: string;
+  title: string;
+  version: string;
+  size: string;
+  url: string;
+}
+
 interface Application {
   id: string;
   name: string;
@@ -27,6 +35,7 @@ interface Application {
   image_url: string;
   icon_url?: string;
   screenshots?: string[];
+  download_options?: DownloadOptionItem[];
   created_at: string;
   updated_at?: string;
 }
@@ -551,6 +560,34 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
     image_url: app?.image_url || "",
   });
 
+  // Download options state
+  const [downloadOptions, setDownloadOptions] = useState<DownloadOptionItem[]>(
+    (app?.download_options || []).map((opt, i) => ({
+      id: `existing-${i}`,
+      title: opt.title || "",
+      version: opt.version || "",
+      size: opt.size || "",
+      url: opt.url || "",
+    }))
+  );
+
+  const addDownloadOption = () => {
+    setDownloadOptions(prev => [
+      ...prev,
+      { id: Math.random().toString(36).substring(7), title: "", version: "", size: "", url: "" },
+    ]);
+  };
+
+  const removeDownloadOption = (id: string) => {
+    setDownloadOptions(prev => prev.filter(o => o.id !== id));
+  };
+
+  const updateDownloadOption = (id: string, field: keyof Omit<DownloadOptionItem, "id">, value: string) => {
+    setDownloadOptions(prev =>
+      prev.map(o => (o.id === id ? { ...o, [field]: value } : o))
+    );
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) { setFile(f); setPreview(URL.createObjectURL(f)); }
@@ -646,6 +683,9 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
         image_url: formData.image_url,
         icon_url: finalIconUrl,
         screenshots: finalScreenshots,
+        download_options: downloadOptions
+          .filter(o => o.title && o.url)
+          .map(({ title, version, size, url }) => ({ title, version, size, url })),
       };
 
       console.log("📝 Paso 3: Guardando en BD...", payload);
@@ -810,6 +850,67 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                   <div className="flex justify-between"><span>Tabla</span><span className="text-purple-400 font-mono font-medium">applications</span></div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* ═══ OPCIONES DE DESCARGA ═══ */}
+          <div className="border-t border-slate-800/50 pt-5">
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Download size={14} className="text-emerald-400" />
+                Opciones de Descarga
+              </label>
+              <button
+                type="button"
+                onClick={addDownloadOption}
+                className="flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-all"
+              >
+                <Plus size={14} /> Agregar opción
+              </button>
+            </div>
+
+            {downloadOptions.length === 0 && (
+              <p className="text-xs text-slate-600 italic mb-2">Sin opciones adicionales. Se usará la URL de descarga principal.</p>
+            )}
+
+            <div className="space-y-3">
+              {downloadOptions.map((opt, idx) => (
+                <div key={opt.id} className="bg-slate-900/60 border border-slate-800/50 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase">Opción {idx + 1}</span>
+                    <button type="button" onClick={() => removeDownloadOption(opt.id)} className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      placeholder="Título (ej. Premium Mod)"
+                      className="col-span-2 w-full bg-slate-950/80 border border-slate-700/50 p-2.5 rounded-lg text-white text-sm placeholder:text-slate-600 outline-none focus:ring-1 focus:ring-emerald-500/50"
+                      value={opt.title}
+                      onChange={e => updateDownloadOption(opt.id, "title", e.target.value)}
+                    />
+                    <input
+                      placeholder="Versión (ej. v1.0)"
+                      className="w-full bg-slate-950/80 border border-slate-700/50 p-2.5 rounded-lg text-slate-300 text-sm placeholder:text-slate-600 outline-none focus:ring-1 focus:ring-emerald-500/50"
+                      value={opt.version}
+                      onChange={e => updateDownloadOption(opt.id, "version", e.target.value)}
+                    />
+                    <input
+                      placeholder="Tamaño (ej. 105 MB)"
+                      className="w-full bg-slate-950/80 border border-slate-700/50 p-2.5 rounded-lg text-slate-300 text-sm placeholder:text-slate-600 outline-none focus:ring-1 focus:ring-emerald-500/50"
+                      value={opt.size}
+                      onChange={e => updateDownloadOption(opt.id, "size", e.target.value)}
+                    />
+                    <input
+                      placeholder="URL de descarga"
+                      type="url"
+                      className="col-span-2 w-full bg-slate-950/80 border border-slate-700/50 p-2.5 rounded-lg text-emerald-400 text-sm placeholder:text-slate-600 outline-none focus:ring-1 focus:ring-emerald-500/50"
+                      value={opt.url}
+                      onChange={e => updateDownloadOption(opt.id, "url", e.target.value)}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
