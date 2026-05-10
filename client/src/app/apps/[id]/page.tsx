@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useApp } from "@/hooks/use-apps";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,8 +24,10 @@ import {
   CheckCircle,
   TrendingUp,
   Clock,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+
 
 // Animated background
 function FloatingParticles() {
@@ -57,15 +61,46 @@ function AppDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { data, isLoading } = useApp(params.id as string);
+  const [downloadCount, setDownloadCount] = useState<number | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
-  const handleDownload = () => {
+  // Use local count if available, otherwise fall back to fetched data
+  const currentCount = downloadCount ?? data?.app?.download_count ?? 0;
+
+  const handleDownload = async () => {
     if (!data?.app?.download_url) {
       toast.error("Esta app no tiene enlace de descarga");
       return;
     }
-    window.open(data.app.download_url, "_blank");
-    toast.success("¡Descarga iniciada!");
+
+    setDownloading(true);
+    try {
+      // Increment counter in database via RPC
+      const { error } = await supabase.rpc("increment_download", {
+        app_id: params.id as string,
+      });
+
+      if (error) {
+        console.error("Error incrementando descargas:", error);
+        // Still allow the download even if the counter fails
+      } else {
+        // Update local counter immediately
+        setDownloadCount(currentCount + 1);
+      }
+
+      // Open download URL in new tab
+      window.open(data.app.download_url, "_blank");
+      toast.success("¡Descarga iniciada!");
+    } catch (err: any) {
+      console.error("Error en descarga:", err);
+      // Still open the URL even on error
+      window.open(data.app.download_url, "_blank");
+      toast.success("¡Descarga iniciada!");
+    } finally {
+      setDownloading(false);
+    }
   };
+
 
   if (isLoading) {
     return (
@@ -199,7 +234,7 @@ function AppDetailPage() {
               </Badge>
               <div className="flex items-center gap-1.5 text-sm font-medium text-slate-300 bg-slate-900/50 border border-slate-800 rounded-full px-3 py-1">
                 <Download className="w-4 h-4 text-emerald-400" />
-                {(app.download_count ?? 0).toLocaleString("es-ES")} descargas
+                {currentCount.toLocaleString("es-ES")} descargas
               </div>
               <div className="flex items-center gap-1.5 text-sm font-medium text-slate-300 bg-slate-900/50 border border-slate-800 rounded-full px-3 py-1">
                 <Shield className="w-4 h-4 text-emerald-400" /> Segura
@@ -217,16 +252,19 @@ function AppDetailPage() {
               className="w-full max-w-sm mb-8"
             >
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <a
-                  href={app.download_url || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => { if (!app.download_url) { e.preventDefault(); toast.error("Sin enlace de descarga"); } else { toast.success("¡Descarga iniciada!"); } }}
-                  className="w-full inline-flex items-center justify-center bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 hover:from-green-600 hover:via-emerald-600 hover:to-green-600 py-4 text-lg font-semibold shadow-2xl shadow-green-500/25 hover:shadow-green-500/40 relative overflow-hidden group rounded-2xl text-white transition-all"
+                <button
+                  type="button"
+                  disabled={downloading}
+                  onClick={handleDownload}
+                  className="w-full inline-flex items-center justify-center bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 hover:from-green-600 hover:via-emerald-600 hover:to-green-600 py-4 text-lg font-semibold shadow-2xl shadow-green-500/25 hover:shadow-green-500/40 relative overflow-hidden group rounded-2xl text-white transition-all disabled:opacity-70 disabled:cursor-wait cursor-pointer"
                 >
                   <motion.span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0" animate={{ x: ["-100%", "100%"] }} transition={{ duration: 2, repeat: Infinity }} />
-                  <Download className="w-6 h-6 mr-2" /> Descargar Ahora <ExternalLink className="w-5 h-5 ml-2 opacity-50" />
-                </a>
+                  {downloading ? (
+                    <><Loader2 className="w-6 h-6 mr-2 animate-spin" /> Procesando...</>
+                  ) : (
+                    <><Download className="w-6 h-6 mr-2" /> Descargar Ahora <ExternalLink className="w-5 h-5 ml-2 opacity-50" /></>
+                  )}
+                </button>
               </motion.div>
             </motion.div>
 
@@ -288,7 +326,7 @@ function AppDetailPage() {
                     </div>
                     <div>
                       <p className="text-xs text-slate-500">Descargas</p>
-                      <p className="text-white font-semibold">{(app.download_count ?? 0).toLocaleString("es-ES")}</p>
+                      <p className="text-white font-semibold">{currentCount.toLocaleString("es-ES")}</p>
                     </div>
                   </div>
 
