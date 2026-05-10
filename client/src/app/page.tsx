@@ -163,7 +163,7 @@ function Footer() {
             <h4 className="text-white font-semibold mb-4">Contacto</h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <a href="https://wa.me/qr/3G6KTSTUJWU6A1" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-green-400 transition-colors">
+                <a href="https://wa.me/573115397930" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-green-400 transition-colors">
                   <div className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
                     <MessageSquare className="w-4 h-4 text-green-400" />
                   </div>
@@ -171,7 +171,7 @@ function Footer() {
                 </a>
               </li>
               <li>
-                <a href="https://t.me/Juan17990" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors">
+                <a href="https://t.me/Alejandro19200" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors">
                   <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
                     <Send className="w-4 h-4 text-blue-400" />
                   </div>
