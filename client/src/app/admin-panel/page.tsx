@@ -7,7 +7,8 @@ import {
   Plus, Pencil, Trash2, ExternalLink, Loader2,
   Image as ImageIcon, X, Search, AlertTriangle,
   CheckCircle2, Database, Zap, ArrowLeft, Crown,
-  Sparkles, AppWindow, Gamepad2, Bot, Users, Shield, Mail
+  Sparkles, AppWindow, Gamepad2, Bot, Users, Shield, Mail,
+  Settings, ImagePlus,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -50,7 +51,11 @@ export default function AdminPanel() {
   const [editingApp, setEditingApp] = useState<Application | null>(null);
   const [notification, setNotification] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
-  useEffect(() => { fetchData(); fetchUsers(); }, []);
+  // ── Logo del sitio ──
+  const [siteLogoUrl, setSiteLogoUrl] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  useEffect(() => { fetchData(); fetchUsers(); fetchSiteLogo(); }, []);
 
   useEffect(() => {
     if (notification) {
@@ -82,6 +87,59 @@ export default function AdminPanel() {
       setUsers(data || []);
     } catch (err: any) {
       console.error("Error cargando usuarios:", err.message);
+    }
+  };
+
+  const fetchSiteLogo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("site_settings")
+        .select("logo_url")
+        .eq("id", 1)
+        .single();
+      if (!error && data?.logo_url) {
+        setSiteLogoUrl(data.logo_url);
+      }
+    } catch {
+      // Table might not exist yet — silent
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const fileName = `logo-${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(SYSTEM_CONFIG.BUCKET_NAME)
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw new Error("Error al subir: " + uploadError.message);
+
+      const { data: urlData } = supabase.storage
+        .from(SYSTEM_CONFIG.BUCKET_NAME)
+        .getPublicUrl(fileName);
+
+      const publicUrl = urlData.publicUrl;
+
+      // Upsert into site_settings
+      const { error: dbError } = await supabase
+        .from("site_settings")
+        .upsert({ id: 1, logo_url: publicUrl }, { onConflict: "id" });
+
+      if (dbError) throw new Error("Error guardando en BD: " + dbError.message);
+
+      setSiteLogoUrl(publicUrl);
+      setNotification({ msg: "¡Logotipo actualizado exitosamente!", type: "success" });
+    } catch (err: any) {
+      console.error("Error subiendo logo:", err);
+      setNotification({ msg: "Error al cambiar logo: " + err.message, type: "error" });
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
@@ -196,6 +254,64 @@ export default function AdminPanel() {
             >
               <Plus size={18} strokeWidth={2.5} /> Nueva App
             </button>
+          </div>
+        </div>
+
+        {/* ═══ CONFIGURACIÓN DEL SITIO ═══ */}
+        <div className="mb-8 p-5 rounded-2xl bg-gradient-to-r from-amber-500/5 to-yellow-500/5 border-2 border-amber-500/30 shadow-lg shadow-amber-500/5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-500 shadow-lg shadow-amber-500/30">
+              <Settings className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Configuración del Sitio</h2>
+              <p className="text-xs text-amber-300/70">Cambia el logotipo global de la página</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-5">
+            {/* Preview del logo */}
+            <div className="shrink-0">
+              {siteLogoUrl ? (
+                <img
+                  src={siteLogoUrl}
+                  alt="Logo actual"
+                  className="w-20 h-20 rounded-2xl object-contain shadow-lg border-2 border-amber-500/20 bg-slate-900/80 p-1.5"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-2xl bg-slate-900/80 border-2 border-dashed border-slate-700 flex items-center justify-center">
+                  <Bot className="w-10 h-10 text-slate-600" />
+                </div>
+              )}
+            </div>
+
+            {/* Input de archivo */}
+            <div className="flex-1 space-y-2">
+              <label className="text-sm font-semibold text-white flex items-center gap-2">
+                <ImagePlus className="w-4 h-4 text-amber-400" />
+                Subir nuevo logotipo
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  disabled={uploadingLogo}
+                  className="flex-1 text-sm text-slate-300 bg-slate-900/80 border border-slate-700/50 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-black file:cursor-pointer hover:file:bg-amber-400 transition-all"
+                />
+                {uploadingLogo && (
+                  <Loader2 className="w-5 h-5 text-amber-400 animate-spin shrink-0" />
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Recomendado: imagen cuadrada 200×200 px (PNG o SVG)
+              </p>
+              {siteLogoUrl && (
+                <p className="text-[10px] text-emerald-400/80 flex items-center gap-1 font-medium">
+                  <CheckCircle2 className="w-3 h-3" /> Logo activo — se muestra en toda la web
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
