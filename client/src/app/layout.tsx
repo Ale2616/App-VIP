@@ -114,7 +114,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={cn("font-sans", geist.variable)}>
-      <body className={inter.className}>
+      <body className={`${inter.className} overflow-x-hidden`}>
         <QueryProvider>
           <AuthProvider>
             {children}

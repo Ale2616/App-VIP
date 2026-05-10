@@ -229,7 +229,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black via-slate-950 to-slate-900 relative">
+    <main className="min-h-screen bg-gradient-to-b from-black via-slate-950 to-slate-900 relative overflow-x-hidden">
       <FloatingParticles />
       <GradientOrbs />
 

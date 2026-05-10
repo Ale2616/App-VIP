@@ -177,7 +177,7 @@ export default function AdminPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black via-slate-950 to-slate-900 relative">
+    <main className="min-h-screen bg-gradient-to-b from-black via-slate-950 to-slate-900 relative overflow-x-hidden">
       {/* BG */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <motion.div

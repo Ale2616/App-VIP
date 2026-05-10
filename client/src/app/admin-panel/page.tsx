@@ -210,7 +210,7 @@ export default function AdminPanel() {
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black via-slate-950 to-slate-900 text-white font-sans antialiased relative">
+    <main className="min-h-screen bg-gradient-to-b from-black via-slate-950 to-slate-900 text-white font-sans antialiased relative overflow-x-hidden">
       {/* Orbes decorativos */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 rounded-full blur-3xl" />
@@ -219,13 +219,13 @@ export default function AdminPanel() {
 
       {/* Notificación */}
       {notification && (
-        <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-5 py-3.5 rounded-xl border backdrop-blur-xl shadow-2xl transition-all duration-500 ${
+        <div className={`fixed top-5 right-5 left-5 sm:left-auto z-[999] flex items-center gap-3 px-5 py-3.5 rounded-xl border backdrop-blur-xl shadow-2xl transition-all duration-500 ${
           notification.type === "success"
             ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
             : "bg-red-500/10 border-red-500/20 text-red-400"
         }`}>
-          {notification.type === "success" ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
-          <p className="font-medium text-sm">{notification.msg}</p>
+          {notification.type === "success" ? <CheckCircle2 size={18} className="shrink-0" /> : <AlertTriangle size={18} className="shrink-0" />}
+          <p className="font-medium text-sm min-w-0 break-words">{notification.msg}</p>
         </div>
       )}
 
@@ -291,7 +291,7 @@ export default function AdminPanel() {
             </div>
           </div>
 
-          <div className="flex items-center gap-5">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-5">
             {/* Preview del logo */}
             <div className="shrink-0">
               {siteLogoUrl ? (
@@ -319,7 +319,7 @@ export default function AdminPanel() {
                   accept="image/*"
                   onChange={handleLogoUpload}
                   disabled={uploadingLogo}
-                  className="flex-1 text-sm text-slate-300 bg-slate-900/80 border border-slate-700/50 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-black file:cursor-pointer hover:file:bg-amber-400 transition-all"
+                  className="w-full min-w-0 text-sm text-slate-300 bg-slate-900/80 border border-slate-700/50 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-black file:cursor-pointer hover:file:bg-amber-400 transition-all"
                 />
                 {uploadingLogo && (
                   <Loader2 className="w-5 h-5 text-amber-400 animate-spin shrink-0" />
@@ -686,7 +686,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
     <div className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 z-[500]">
       <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800/50 w-full max-w-3xl rounded-2xl shadow-2xl shadow-purple-900/20 overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header del modal */}
-        <div className="px-7 py-5 border-b border-slate-800/50 flex justify-between items-center">
+        <div className="px-4 sm:px-7 py-5 border-b border-slate-800/50 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-xl">
               {app ? <Pencil className="w-4 h-4 text-white" /> : <Plus className="w-4 h-4 text-white" />}
@@ -702,7 +702,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
         </div>
 
         {/* Formulario */}
-        <form onSubmit={handleSave} className="p-7 overflow-y-auto space-y-6 flex-1">
+        <form onSubmit={handleSave} className="p-4 sm:p-7 overflow-y-auto space-y-6 flex-1">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
             {/* Izquierda */}
             <div className="space-y-4">
