@@ -6,6 +6,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useAuthStore } from "@/store/auth-store";
 import { useApps } from "@/hooks/use-apps";
 import { useLogActivity } from "@/hooks/use-visits";
+import { useSiteSettings } from "@/hooks/use-site-settings";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -141,14 +142,18 @@ function HeroSection({ totalApps, totalDownloads }: { totalApps: number; totalDo
   );
 }
 
-function Footer() {
+function Footer({ logoUrl }: { logoUrl?: string | null }) {
   return (
     <footer className="border-t border-slate-800/50 bg-slate-950/50 backdrop-blur-xl mt-20">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-lg"><Bot className="w-5 h-5 text-white" /></div>
+              {logoUrl ? (
+                <img src={logoUrl} alt="App VIP" className="w-10 h-10 rounded-lg object-contain" />
+              ) : (
+                <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-lg"><Bot className="w-5 h-5 text-white" /></div>
+              )}
               <span className="text-xl font-bold text-white">App VIP</span>
             </div>
             <p className="text-slate-400 text-sm">Tu destino premium para descubrir y descargar las mejores aplicaciones y juegos.</p>
@@ -209,6 +214,7 @@ export default function HomePage() {
 
   const { data, isLoading } = useApps(category, mostDownloaded);
   const logActivity = useLogActivity();
+  const { logoUrl } = useSiteSettings();
 
   const filteredApps = data?.apps?.filter((app) =>
     app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -231,7 +237,11 @@ export default function HomePage() {
       <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-xl shadow-lg shadow-purple-500/20"><Bot className="w-5 h-5 text-white" /></div>
+            {logoUrl ? (
+              <img src={logoUrl} alt="App VIP" className="w-10 h-10 rounded-xl object-contain shadow-lg" />
+            ) : (
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-xl shadow-lg shadow-purple-500/20"><Bot className="w-5 h-5 text-white" /></div>
+            )}
             <span className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">App VIP</span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -364,7 +374,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <Footer />
+      <Footer logoUrl={logoUrl} />
     </main>
   );
 }

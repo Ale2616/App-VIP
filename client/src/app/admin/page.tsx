@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, Trash2, Pencil, Loader2, X, Crown, Package,
   Download, Search, RefreshCw, ExternalLink, ImagePlus,
-  CheckCircle, AlertTriangle, Bot, Image, Camera,
+  CheckCircle, AlertTriangle, Bot, Image, Camera, Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { App } from "@/types";
@@ -451,6 +451,9 @@ export default function AdminPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Site Logo Config */}
+      <SiteLogoConfig />
 
       {/* Edit Modal */}
       <AnimatePresence>
@@ -896,5 +899,164 @@ function EditModal({
         </Card>
       </motion.div>
     </motion.div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SITE LOGO CONFIG
+// ═══════════════════════════════════════════════════════════════
+function SiteLogoConfig() {
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  // Fetch current logo on mount
+  useEffect(() => {
+    async function fetchLogo() {
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/site_settings?id=eq.1&select=logo_url`,
+          { headers }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.[0]?.logo_url) {
+            setLogoUrl(data[0].logo_url);
+          }
+        }
+      } catch {
+        // Table might not exist yet
+      } finally {
+        setLoadingSettings(false);
+      }
+    }
+    fetchLogo();
+  }, []);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      // 1. Upload image to storage
+      const ext = file.name.split(".").pop() || "png";
+      const fileName = `logo-${Date.now()}.${ext}`;
+
+      const uploadRes = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`,
+        {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": file.type,
+            "x-upsert": "true",
+          },
+          body: file,
+        }
+      );
+
+      if (!uploadRes.ok) {
+        const errBody = await uploadRes.json().catch(() => null);
+        const msg = (errBody as any)?.message || "Error al subir logo";
+        throw new Error(msg);
+      }
+
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${fileName}`;
+
+      // 2. Upsert into site_settings
+      const upsertRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/site_settings`,
+        {
+          method: "POST",
+          headers: {
+            ...headers,
+            Prefer: "resolution=merge-duplicates,return=representation",
+          },
+          body: JSON.stringify({ id: 1, logo_url: publicUrl }),
+        }
+      );
+
+      if (!upsertRes.ok) {
+        const errBody = await upsertRes.json().catch(() => null);
+        const msg = (errBody as any)?.message || "Error al guardar en site_settings";
+        throw new Error(msg);
+      }
+
+      setLogoUrl(publicUrl);
+      toast.success("¡Logotipo actualizado!");
+    } catch (err: any) {
+      console.error("Error subiendo logo:", err);
+      alert("Error al cambiar logo: " + err.message);
+      toast.error(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="container mx-auto px-4 mt-8">
+      <Card className="bg-slate-900/60 backdrop-blur-xl border-slate-800/50 shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-white text-lg flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-yellow-500">
+              <Settings className="w-4 h-4 text-white" />
+            </div>
+            Configuración de la Página
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-6">
+            {/* Logo preview */}
+            <div className="shrink-0">
+              {loadingSettings ? (
+                <div className="w-20 h-20 rounded-2xl bg-slate-800 animate-pulse" />
+              ) : logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt="Logo actual"
+                  className="w-20 h-20 rounded-2xl object-contain shadow-lg border border-slate-700 bg-slate-800/50 p-1"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-2xl bg-slate-800 flex items-center justify-center border border-slate-700">
+                  <Bot className="w-10 h-10 text-slate-600" />
+                </div>
+              )}
+            </div>
+
+            {/* Upload input */}
+            <div className="flex-1 space-y-2">
+              <Label className="text-white text-sm flex items-center gap-2">
+                <ImagePlus className="w-4 h-4 text-amber-400" />
+                Logotipo del sitio
+              </Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  disabled={uploading}
+                  className="bg-slate-950 border-slate-800 text-xs cursor-pointer flex-1"
+                />
+                {uploading && (
+                  <Loader2 className="w-5 h-5 text-amber-400 animate-spin shrink-0" />
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500">
+                {logoUrl
+                  ? "Selecciona una nueva imagen para reemplazar el logo actual"
+                  : "Sube un logo para personalizar tu sitio (recomendado: cuadrado, 200×200 px)"}
+              </p>
+              {logoUrl && (
+                <p className="text-[10px] text-emerald-400/70 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" /> Logo activo
+                </p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
