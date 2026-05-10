@@ -51,57 +51,39 @@ function GradientOrbs() {
 }
 
 function AppCard({ app, index }: { app: App; index: number }) {
-  const handleDownload = () => {
-    if (app.download_url) {
-      window.open(app.download_url, "_blank");
-      toast.success("¡Descarga iniciada!");
-    } else {
-      toast.error("Esta app no tiene enlace de descarga");
-    }
-  };
-
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * .05 }} className="group">
-      <Card className="bg-slate-900/60 backdrop-blur-xl border-slate-800/50 hover:border-purple-500/30 transition-all duration-300 overflow-hidden hover:shadow-2xl hover:shadow-purple-500/10">
-        <CardContent className="p-5">
-          <div className="flex items-start gap-4">
-            <Link href={`/apps/${app.id}`} className="shrink-0">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
-                {(app.icon_url || app.image_url) ? (
-                  <img src={app.icon_url || app.image_url!} alt={app.name} className="w-16 h-16 rounded-2xl object-cover relative z-10 shadow-lg" />
-                ) : (
-                  <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center relative z-10 shadow-lg"><Package className="w-8 h-8 text-slate-600" /></div>
-                )}
+      <Link href={`/apps/${app.id}`} className="block">
+        <Card className="bg-slate-900/60 backdrop-blur-xl border-slate-800/50 hover:border-purple-500/30 transition-all duration-300 overflow-hidden hover:shadow-2xl hover:shadow-purple-500/10 cursor-pointer">
+          <CardContent className="p-5">
+            <div className="flex items-start gap-4">
+              <div className="shrink-0">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
+                  {(app.icon_url || app.image_url) ? (
+                    <img src={app.icon_url || app.image_url!} alt={app.name} className="w-16 h-16 rounded-2xl object-cover relative z-10 shadow-lg" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center relative z-10 shadow-lg"><Package className="w-8 h-8 text-slate-600" /></div>
+                  )}
+                </div>
               </div>
-            </Link>
-            <div className="flex-1 min-w-0">
-              <Link href={`/apps/${app.id}`}>
+              <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-semibold text-white group-hover:text-purple-400 transition-colors truncate">
                   {app.name}<ChevronRight className="inline-block w-4 h-4 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </h3>
-              </Link>
-              <p className="text-sm text-slate-400 line-clamp-2 mt-1 group-hover:text-slate-300 transition-colors">{app.description}</p>
-              <div className="flex items-center gap-3 mt-2.5">
-                <Badge variant="secondary" className="text-xs bg-slate-800/50 border-slate-700">{app.category}</Badge>
-                {app.version && <span className="text-xs text-slate-500">v{app.version}</span>}
-                <span className="text-xs text-slate-500 flex items-center gap-1">
-                  <Download className="w-3 h-3" />{(app.download_count ?? 0).toLocaleString("es-ES")}
-                </span>
+                <p className="text-sm text-slate-400 line-clamp-2 mt-1 group-hover:text-slate-300 transition-colors">{app.description}</p>
+                <div className="flex items-center gap-3 mt-2.5">
+                  <Badge variant="secondary" className="text-xs bg-slate-800/50 border-slate-700">{app.category}</Badge>
+                  {app.version && <span className="text-xs text-slate-500">v{app.version}</span>}
+                  <span className="text-xs text-slate-500 flex items-center gap-1">
+                    <Download className="w-3 h-3" />{(app.download_count ?? 0).toLocaleString("es-ES")}
+                  </span>
+                </div>
               </div>
             </div>
-            <a
-              href={app.download_url || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => { if (!app.download_url) { e.preventDefault(); toast.error("Sin enlace de descarga"); } else { toast.success("¡Descarga iniciada!"); } }}
-              className="shrink-0 inline-flex items-center justify-center bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/25 px-5 h-10 rounded-md text-white text-sm font-medium transition-colors"
-            >
-              <Download className="w-4 h-4 mr-2" />Descargar
-            </a>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </Link>
     </motion.div>
   );
 }
