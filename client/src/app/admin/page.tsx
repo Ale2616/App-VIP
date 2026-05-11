@@ -16,10 +16,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, Trash2, Pencil, Loader2, X, Crown, Package,
   Download, Search, RefreshCw, ExternalLink, ImagePlus,
-  CheckCircle, AlertTriangle, Bot, Image, Camera, Settings,
+  CheckCircle, AlertTriangle, Bot, Image as ImageIcon, Camera, Settings,
 } from "lucide-react";
 import { toast } from "sonner";
+import NextImage from "next/image";
 import type { App } from "@/types";
+import { useSiteSettings } from "@/hooks/use-site-settings";
 
 const SUPABASE_URL = "https://wzeklbcmloxxvzqtxocq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Irc_VuEUm_TMrVfB9dgf3g_UxAyGRVG";
@@ -125,6 +127,7 @@ export default function AdminPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [editingApp, setEditingApp] = useState<App | null>(null);
+  const { logoUrl: siteLogoUrl } = useSiteSettings();
 
   const loadApps = useCallback(async () => {
     setLoading(true);
@@ -205,9 +208,20 @@ export default function AdminPage() {
               </div>
             </Link>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-xl shadow-lg shadow-amber-500/20">
-                <Crown className="w-5 h-5 text-black" />
-              </div>
+              {siteLogoUrl ? (
+                <NextImage
+                  src={siteLogoUrl}
+                  alt="Logo del sitio"
+                  width={40}
+                  height={40}
+                  className="object-contain rounded-md shadow-lg shadow-amber-500/20"
+                  priority
+                />
+              ) : (
+                <div className="p-2 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-xl shadow-lg shadow-amber-500/20">
+                  <Crown className="w-5 h-5 text-black" />
+                </div>
+              )}
               <div>
                 <h1 className="text-xl font-bold text-white">
                   Panel de Administrador
@@ -702,7 +716,7 @@ function EditModal({
               {/* Icon / Logo Upload */}
               <div className="space-y-2">
                 <Label className="text-white text-sm flex items-center gap-2">
-                  <Image className="w-4 h-4 text-amber-400" />
+                  <ImageIcon className="w-4 h-4 text-amber-400" />
                   Logo / Icono
                 </Label>
                 <div className="flex items-center gap-4">

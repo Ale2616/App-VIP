@@ -11,6 +11,7 @@ import {
   Settings, ImagePlus,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 const SYSTEM_CONFIG = {
   BUCKET_NAME: "app-images",
@@ -242,9 +243,20 @@ export default function AdminPanel() {
       <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-xl shadow-lg shadow-purple-500/20">
-              <Bot className="w-5 h-5 text-white" />
-            </div>
+            {siteLogoUrl ? (
+              <Image
+                src={siteLogoUrl}
+                alt="Logo del sitio"
+                width={40}
+                height={40}
+                className="object-contain rounded-md shadow-lg shadow-purple-500/20"
+                priority
+              />
+            ) : (
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-xl shadow-lg shadow-purple-500/20">
+                <Bot className="w-5 h-5 text-white" />
+              </div>
+            )}
             <span className="text-lg font-bold text-white group-hover:text-purple-400 transition-colors">App VIP</span>
           </Link>
           <div className="flex items-center gap-2">
