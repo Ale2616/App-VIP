@@ -346,9 +346,9 @@ export default function AdminPage() {
                   >
                     {/* Thumbnail */}
                     <div className="shrink-0">
-                      {app.image_url || app.icon_url ? (
+                      {app.icon_url || app.image_url ? (
                         <img
-                          src={app.image_url || app.icon_url!}
+                          src={`${app.icon_url || app.image_url}?t=${new Date(app.updated_at || app.created_at).getTime()}`}
                           alt={app.name}
                           className="w-14 h-14 rounded-xl object-cover shadow-lg border border-slate-800"
                         />

@@ -423,8 +423,12 @@ export default function AdminPanel() {
               >
                 {/* Imagen */}
                 <div className="aspect-video relative overflow-hidden bg-slate-900">
-                  {app.image_url ? (
-                    <img src={app.image_url} alt={app.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  {(app.icon_url || app.image_url) ? (
+                    <img
+                      src={`${app.icon_url || app.image_url}?t=${new Date(app.updated_at || app.created_at).getTime()}`}
+                      alt={app.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <div className="p-4 rounded-2xl bg-slate-800/50"><ImageIcon size={36} className="text-slate-700" /></div>
@@ -638,6 +642,9 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
       return;
     }
 
+    // Evitar doble clic
+    if (saving) return;
+
     setSaving(true);
     try {
       // ── 1. Subir icono/logo si se seleccionó un archivo ──
@@ -673,7 +680,17 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
         }
       }
 
-      // ── 3. Guardar en base de datos ──
+      // ── 3. Filtrar download_options vacías (trim para evitar espacios) ──
+      const cleanedDownloadOptions = downloadOptions
+        .filter(o => o.title.trim() !== "" && o.url.trim() !== "")
+        .map(({ title, version, size, url }) => ({
+          title: title.trim(),
+          version: version.trim(),
+          size: size.trim(),
+          url: url.trim(),
+        }));
+
+      // ── 4. Guardar en base de datos ──
       const payload = {
         name: formData.name,
         description: formData.description,
@@ -683,12 +700,10 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
         image_url: formData.image_url,
         icon_url: finalIconUrl,
         screenshots: finalScreenshots,
-        download_options: downloadOptions
-          .filter(o => o.title && o.url)
-          .map(({ title, version, size, url }) => ({ title, version, size, url })),
+        download_options: cleanedDownloadOptions,
       };
 
-      console.log("📝 Paso 3: Guardando en BD...", payload);
+      console.log("📝 Paso 4: Guardando en BD...", payload);
 
       if (app) {
         // Actualizar app existente
