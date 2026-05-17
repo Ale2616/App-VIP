@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Inicializamos el cliente de Supabase directamente usando las variables de entorno existentes
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -18,21 +17,17 @@ export async function POST(request: Request) {
     const chatId = message.chat.id;
     let textToSend = "";
 
-    // 1. Detección de nuevos miembros
     if (message.new_chat_members && message.new_chat_members.length > 0) {
       const names = message.new_chat_members.map((m: any) => m.first_name).join(", ");
       textToSend = `¡Hola ${names}! 👋 Bienvenidos a la comunidad VIP. Soy Mia, la asistente del grupo. Si gustas pedir una aplicación o aportar alguna sugerencia, puedes hacerlo libremente por aquí. ¡Disfruta del contenido! 🚀`;
     } 
-    // 2. Detección de mensajes de texto
     else if (message.text) {
       const text = message.text.toLowerCase().trim();
 
       if (text === '/start') {
         textToSend = "¡Hola! Soy Mia, tu asistente en App VIP. 🚀 ¿En qué te puedo ayudar hoy?";
       } 
-      // Lógica de búsqueda inteligente en Supabase
       else if (text.includes('busca') || text.includes('búscame') || text.includes('pásame') || text.includes('quiero') || text.startsWith('/buscar')) {
-        // Limpiamos el texto para sacar solo el nombre del juego
         let query = text
           .replace('mia', '')
           .replace('mía', '')
@@ -44,25 +39,24 @@ export async function POST(request: Request) {
           .trim();
 
         if (query.length > 0) {
+          // CORRECCIÓN: Buscando en la tabla 'applications' y columna 'name'
           const { data: apps, error } = await supabase
-            .from('apps')
-            .select('title, slug')
-            .ilike('title', `%${query}%`)
+            .from('applications')
+            .select('name, slug')
+            .ilike('name', `%${query}%`)
             .limit(3);
 
           if (apps && apps.length > 0) {
             textToSend = "¡Esto es lo que encontré en la plataforma VIP! 🚀\n\n" + 
-              apps.map(app => `• *${app.title}*: https://appvip2026.vercel.app/apps/${app.slug}`).join('\n');
+              apps.map(app => `• *${app.name}*: https://appvip2026.vercel.app/apps/${app.slug}`).join('\n');
           } else {
             textToSend = `No encontré "${query}" en la plataforma VIP en este momento. 🔍 Déjame el nombre exacto por aquí y el equipo se encargará de subirlo lo antes posible.`;
           }
         }
       } 
-      // Respuestas genéricas si solo la llaman por su nombre
       else if (text.includes('mia') || text.includes('mía')) {
-        textToSend = "¡Hola! Escuché mi nombre. 🙋♀️ Soy Mia, tu asistente virtual. Si quieres buscar un juego, pídemelo diciendo: 'Mia busca [nombre del juego]' y lo rastrearé en la web.";
+        textToSend = "¡Hola! Escuché mi nombre. 🙋♀️ Soy Mia, tu asistente virtual. Si quieres buscar un juego, pídemelo diciendo: 'Mia busca [nombre]' y lo rastrearé en la web.";
       } 
-      // Respuesta si mencionan palabras clave sueltas
       else if (text.includes('juego') || text.includes('aplicación') || text.includes('mod') || text.includes('app') || text.includes('apps')) {
         textToSend = "Si estás buscando algo en específico, pídemelo directamente diciendo: 'Mia busca [nombre]' y te generaré el enlace VIP de inmediato. ✨";
       }
@@ -71,9 +65,7 @@ export async function POST(request: Request) {
     if (textToSend !== "") {
       await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chatId,
           text: textToSend,
