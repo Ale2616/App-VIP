@@ -1,13 +1,15 @@
-import type { Metadata } from "next"
-import { Inter, Geist } from "next/font/google"
-import "./globals.css"
+import type { Metadata } from "next";
+import { Inter, Geist } from "next/font/google";
+import "./globals.css";
 import { cn } from "@/lib/utils";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { Analytics } from "@vercel/analytics/react";
+import { Footer } from "@/components/Footer";
+import { Send } from "lucide-react";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const inter = Inter({ subsets: ["latin"] })
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const inter = Inter({ subsets: ["latin"] });
 
 // ═══════════════════════════════════════════════════════════
 // SEO — Metadata completa para posicionamiento en Google
@@ -109,7 +111,7 @@ export const metadata: Metadata = {
   verification: {
     google: "n1zBtL_y2eOufZ6TcamlXcltJ2kIxUdtJ72N7ATlK8w",
   },
-}
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -118,9 +120,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <QueryProvider>
           <AuthProvider>
             {children}
+            <Footer />
           </AuthProvider>
         </QueryProvider>
+
+        {/* ── Botón flotante Telegram ── */}
+        <a
+          href="https://t.me/AppVIP26"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Únete a nuestra comunidad de Telegram"
+          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#229ED9] shadow-[0_8px_30px_rgba(34,158,217,0.45)] transition-transform duration-200 hover:scale-110 hover:shadow-[0_8px_40px_rgba(34,158,217,0.65)] active:scale-95"
+        >
+          <Send className="h-6 w-6 text-white" strokeWidth={2} />
+        </a>
+
+        <Analytics />
       </body>
     </html>
-  )
+  );
 }
