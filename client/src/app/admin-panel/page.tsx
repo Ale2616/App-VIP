@@ -577,20 +577,24 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
   });
 
   // Download options state
+  const genId = () => {
+    try { return crypto.randomUUID(); } catch { return `opt-${Date.now()}-${Math.random().toString(36).slice(2)}`; }
+  };
+
   const [downloadOptions, setDownloadOptions] = useState<DownloadOptionItem[]>(
-    (app?.download_options || []).map((opt, i) => ({
-      id: `existing-${i}`,
-      title: opt.title || "",
-      version: opt.version || "",
-      size: opt.size || "",
-      url: opt.url || "",
+    (app?.download_options || []).map((opt) => ({
+      id: genId(),
+      title: opt.title ?? "",
+      version: opt.version ?? "",
+      size: opt.size ?? "",
+      url: opt.url ?? "",
     }))
   );
 
   const addDownloadOption = () => {
     setDownloadOptions(prev => [
       ...prev,
-      { id: Math.random().toString(36).substring(7), title: "", version: "", size: "", url: "" },
+      { id: genId(), title: "", version: "", size: "", url: "" },
     ]);
   };
 
@@ -598,10 +602,13 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
     setDownloadOptions(prev => prev.filter(o => o.id !== id));
   };
 
-  const updateDownloadOption = (id: string, field: keyof Omit<DownloadOptionItem, "id">, value: string) => {
-    setDownloadOptions(prev =>
-      prev.map(o => (o.id === id ? { ...o, [field]: value } : o))
-    );
+  // Usa index para evitar colisión de IDs y garantizar el mapeo correcto
+  const updateDownloadOption = (index: number, field: keyof Omit<DownloadOptionItem, "id">, value: string) => {
+    setDownloadOptions(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -654,12 +661,11 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
       return;
     }
 
-    // Evitar doble clic
     if (saving) return;
-
     setSaving(true);
+
     try {
-      // ── 1. Subir icono/logo si se seleccionó un archivo ──
+      // ── 1. Subir icono/logo ──
       let finalIconUrl = app?.icon_url || "";
       if (file) {
         try {
@@ -687,54 +693,67 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
             throw uploadErr;
           }
         } else {
-          // Captura existente (ya tiene URL)
           finalScreenshots.push(item.url);
         }
       }
 
-      // ── 3. Filtrar download_options vacías (trim para evitar espacios) ──
+      // ── 3. Filtrar opciones de descarga: solo conservar filas con title Y url llenos ──
       const cleanedDownloadOptions = downloadOptions
-        .filter(o => o.title.trim() !== "" && o.url.trim() !== "")
+        .filter(o => (o.title ?? "").trim() !== "" && (o.url ?? "").trim() !== "")
         .map(({ title, version, size, url }) => ({
           title: title.trim(),
-          version: version.trim(),
-          size: size.trim(),
+          version: (version ?? "").trim(),
+          size: (size ?? "").trim(),
           url: url.trim(),
         }));
 
-      // ── 4. Guardar en base de datos ──
+      console.log("🔍 download_options limpias a guardar:", JSON.stringify(cleanedDownloadOptions));
+
+      // ── 4. Construir payload ──
       const payload = {
-        name: formData.name,
-        description: formData.description,
-        version: formData.version,
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        version: formData.version.trim(),
         category: formData.category,
-        download_url: formData.download_url,
-        image_url: formData.image_url,
+        download_url: formData.download_url.trim(),
+        image_url: formData.image_url.trim(),
         icon_url: finalIconUrl,
         screenshots: finalScreenshots,
         download_options: cleanedDownloadOptions,
       };
 
-      console.log("📝 Paso 4: Guardando en BD...", payload);
+      console.log("📝 Payload final a BD:", payload);
 
       if (app) {
-        // Actualizar app existente
         const { error: dbError } = await supabase
           .from(SYSTEM_CONFIG.TABLE_NAME)
           .update(payload)
           .eq("id", app.id);
         if (dbError) {
-          console.error("❌ Error de BD (update):", dbError);
-          throw new Error("Error al actualizar en BD: " + (dbError.message || JSON.stringify(dbError)));
+          console.error("❌ Supabase update error:", dbError);
+          alert(
+            "❌ Error Supabase al actualizar:\n" +
+            "Mensaje: " + dbError.message + "\n" +
+            "Código: " + dbError.code + "\n" +
+            "Detalle: " + (dbError.details || "ninguno") + "\n" +
+            "Hint: " + (dbError.hint || "ninguno")
+          );
+          throw new Error(dbError.message);
         }
       } else {
-        // Crear nueva app
         const { error: dbError } = await supabase
           .from(SYSTEM_CONFIG.TABLE_NAME)
           .insert([payload]);
         if (dbError) {
-          console.error("❌ Error de BD (insert):", dbError);
-          throw new Error("Error al insertar en BD: " + (dbError.message || JSON.stringify(dbError)));
+          console.error("❌ Supabase insert error:", dbError);
+          alert(
+            "❌ Error Supabase al insertar:\n" +
+            "Mensaje: " + dbError.message + "\n" +
+            "Código: " + dbError.code + "\n" +
+            "Detalle: " + (dbError.details || "ninguno") + "\n" +
+            "Hint: " + (dbError.hint || "ninguno")
+          );
+          throw new Error(dbError.message);
         }
       }
 
@@ -744,7 +763,6 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
       console.error("❌ Error completo en handleSave:", err);
       alert("Error al guardar: " + (err?.message || "Error desconocido"));
     } finally {
-      // SIEMPRE liberar el botón, pase lo que pase
       setSaving(false);
     }
   };
@@ -910,30 +928,35 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
+                    {/* Sin type="url" ni required para evitar validación nativa del browser en filas incompletas */}
                     <input
+                      type="text"
                       placeholder="Título (ej. Premium Mod)"
                       className="col-span-2 w-full bg-slate-950/80 border border-slate-700/50 p-2.5 rounded-lg text-white text-sm placeholder:text-slate-600 outline-none focus:ring-1 focus:ring-emerald-500/50"
                       value={opt.title}
-                      onChange={e => updateDownloadOption(opt.id, "title", e.target.value)}
+                      onChange={e => updateDownloadOption(idx, "title", e.target.value)}
                     />
                     <input
+                      type="text"
                       placeholder="Versión (ej. v1.0)"
                       className="w-full bg-slate-950/80 border border-slate-700/50 p-2.5 rounded-lg text-slate-300 text-sm placeholder:text-slate-600 outline-none focus:ring-1 focus:ring-emerald-500/50"
                       value={opt.version}
-                      onChange={e => updateDownloadOption(opt.id, "version", e.target.value)}
+                      onChange={e => updateDownloadOption(idx, "version", e.target.value)}
                     />
                     <input
+                      type="text"
                       placeholder="Tamaño (ej. 105 MB)"
                       className="w-full bg-slate-950/80 border border-slate-700/50 p-2.5 rounded-lg text-slate-300 text-sm placeholder:text-slate-600 outline-none focus:ring-1 focus:ring-emerald-500/50"
                       value={opt.size}
-                      onChange={e => updateDownloadOption(opt.id, "size", e.target.value)}
+                      onChange={e => updateDownloadOption(idx, "size", e.target.value)}
                     />
+                    {/* type="text" en URL: sin validación nativa; la limpieza se hace en handleSave */}
                     <input
-                      placeholder="URL de descarga"
-                      type="url"
+                      type="text"
+                      placeholder="URL de descarga (https://...)"
                       className="col-span-2 w-full bg-slate-950/80 border border-slate-700/50 p-2.5 rounded-lg text-emerald-400 text-sm placeholder:text-slate-600 outline-none focus:ring-1 focus:ring-emerald-500/50"
                       value={opt.url}
-                      onChange={e => updateDownloadOption(opt.id, "url", e.target.value)}
+                      onChange={e => updateDownloadOption(idx, "url", e.target.value)}
                     />
                   </div>
                 </div>
