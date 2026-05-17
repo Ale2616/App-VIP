@@ -245,13 +245,29 @@ export default function HomePage() {
             <span className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">App VIP</span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Panel Pro — siempre visible */}
-            <Link href="/admin-panel">
-              <Button size="sm" className="bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-semibold shadow-lg shadow-amber-500/20 px-2.5 sm:px-4">
+            {/* Panel Pro — solo activo para administradores */}
+            {isAuthenticated && isAdmin ? (
+              <Link href="/admin-panel">
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-semibold shadow-lg shadow-amber-500/20 px-2.5 sm:px-4"
+                >
+                  <Crown className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Panel Pro</span>
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                size="sm"
+                disabled
+                className="bg-gradient-to-r from-amber-500/40 to-yellow-600/40 text-black/50 font-semibold px-2.5 sm:px-4 opacity-50 cursor-not-allowed pointer-events-none select-none"
+                aria-disabled="true"
+                title="Solo disponible para administradores"
+              >
                 <Crown className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Panel Pro</span>
               </Button>
-            </Link>
+            )}
 
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
