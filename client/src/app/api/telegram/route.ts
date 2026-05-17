@@ -22,24 +22,33 @@ export async function POST(request: Request) {
       textToSend = `¡Hola ${names}! 👋 Bienvenidos a la comunidad VIP. Soy Mia, la asistente del grupo. Si gustas pedir una aplicación o aportar alguna sugerencia, puedes hacerlo libremente por aquí. ¡Disfruta del contenido! 🚀`;
     } 
     else if (message.text) {
-      const text = message.text.toLowerCase().trim();
+      const textRaw = message.text;
+      const textLower = textRaw.toLowerCase().trim();
 
-      if (text === '/start') {
+      if (textLower === '/start') {
         textToSend = "¡Hola! Soy Mia, tu asistente en App VIP. 🚀 ¿En qué te puedo ayudar hoy?";
       } 
-      else if (text.includes('busca') || text.includes('búscame') || text.includes('pásame') || text.includes('quiero') || text.startsWith('/buscar')) {
-        let query = text
+      else if (textLower.includes('busca') || textLower.includes('búscame') || textLower.includes('pásame') || textLower.includes('quiero') || textLower.startsWith('/buscar')) {
+        
+        // Limpieza inteligente: quitamos detonantes y palabras de relleno comunes
+        let query = textLower
           .replace('mia', '')
           .replace('mía', '')
           .replace('búscame', '')
           .replace('busca', '')
           .replace('pásame', '')
           .replace('quiero', '')
+          .replace('este', '')
+          .replace('juego', '')
+          .replace('aplicación', '')
+          .replace('aplicacion', '')
+          .replace('app', '')
+          .replace('mod', '')
           .replace('/buscar', '')
           .trim();
 
         if (query.length > 0) {
-          // CORRECCIÓN: Buscando en la tabla 'applications' y columna 'name'
+          // Usamos el término limpio para buscar de forma insensible a mayúsculas/minúsculas
           const { data: apps, error } = await supabase
             .from('applications')
             .select('name, slug')
@@ -50,14 +59,27 @@ export async function POST(request: Request) {
             textToSend = "¡Esto es lo que encontré en la plataforma VIP! 🚀\n\n" + 
               apps.map(app => `• *${app.name}*: https://appvip2026.vercel.app/apps/${app.slug}`).join('\n');
           } else {
-            textToSend = `No encontré "${query}" en la plataforma VIP en este momento. 🔍 Déjame el nombre exacto por aquí y el equipo se encargará de subirlo lo antes posible.`;
+            // Fallback secundario: si no encuentra por frase completa, intentamos buscar por la primera palabra clave
+            const primeraPalabra = query.split(' ')[0];
+            const { data: appsFallback } = await supabase
+              .from('applications')
+              .select('name, slug')
+              .ilike('name', `%${primeraPalabra}%`)
+              .limit(3);
+
+            if (appsFallback && appsFallback.length > 0) {
+              textToSend = "No encontré el nombre exacto, pero quizás te interese esto de la plataforma VIP! 🚀\n\n" + 
+                appsFallback.map(app => `• *${app.name}*: https://appvip2026.vercel.app/apps/${app.slug}`).join('\n');
+            } else {
+              textToSend = `No encontré "${query}" en la plataforma VIP en este momento. 🔍 Déjame el nombre exacto por aquí y el equipo se encargará de subirlo lo antes posible.`;
+            }
           }
         }
       } 
-      else if (text.includes('mia') || text.includes('mía')) {
+      else if (textLower.includes('mia') || textLower.includes('mía')) {
         textToSend = "¡Hola! Escuché mi nombre. 🙋♀️ Soy Mia, tu asistente virtual. Si quieres buscar un juego, pídemelo diciendo: 'Mia busca [nombre]' y lo rastrearé en la web.";
       } 
-      else if (text.includes('juego') || text.includes('aplicación') || text.includes('mod') || text.includes('app') || text.includes('apps')) {
+      else if (textLower.includes('juego') || textLower.includes('aplicación') || textLower.includes('mod') || textLower.includes('app') || textLower.includes('apps')) {
         textToSend = "Si estás buscando algo en específico, pídemelo directamente diciendo: 'Mia busca [nombre]' y te generaré el enlace VIP de inmediato. ✨";
       }
     }
