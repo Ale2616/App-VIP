@@ -19,6 +19,26 @@ function enrichProfile(profile: Profile, authUser: User): Profile {
   };
 }
 
+/** Obtiene el perfil desde la tabla profiles y lo inyecta en el store. */
+async function loadProfileFromDB(
+  userId: string,
+  authUser: User,
+  setProfile: (p: Profile) => void,
+  clearAuth: () => void
+) {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (profile) {
+    setProfile(enrichProfile(profile, authUser));
+  } else {
+    clearAuth();
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { setProfile, clearAuth, setLoading } = useAuthStore();
   const hasInitialized = useRef(false);
@@ -36,17 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } = await supabase.auth.getSession();
 
         if (session?.user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", session.user.id)
-            .single();
-
-          if (profile) {
-            setProfile(enrichProfile(profile, session.user));
-          } else {
-            clearAuth();
-          }
+          await loadProfileFromDB(session.user.id, session.user, setProfile, clearAuth);
         } else {
           clearAuth();
         }
@@ -57,20 +67,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initAuth();
 
-    // Listen for auth state changes (login, logout, token refresh)
+    // Listen for auth state changes (login, logout, token refresh, role update)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
-
-        if (profile) {
-          setProfile(enrichProfile(profile, session.user));
-        }
+      if (
+        (event === "SIGNED_IN" ||
+          event === "TOKEN_REFRESHED" ||
+          event === "USER_UPDATED") &&
+        session?.user
+      ) {
+        // Siempre re-lee el rol desde la tabla profiles para evitar datos obsoletos
+        await loadProfileFromDB(session.user.id, session.user, setProfile, clearAuth);
       } else if (event === "SIGNED_OUT") {
         clearAuth();
       }
