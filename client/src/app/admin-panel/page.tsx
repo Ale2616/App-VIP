@@ -180,35 +180,25 @@ export default function AdminPanel() {
     const action = newRole === "admin" ? "dar permisos de Administrador" : "quitar permisos de Administrador";
     if (!confirm(`¿Seguro que quieres ${action} a este usuario?`)) return;
     try {
-      // 1. Actualizar tabla profiles (fuente de verdad principal)
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ role: newRole })
-        .eq("id", userId);
+      const res = await fetch("/api/set-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, role: newRole }),
+      });
 
-      if (profileError) {
-        console.error("❌ Error actualizando profiles:", profileError);
-        alert(
-          "❌ Error al actualizar profiles:\n" +
-          "Mensaje: " + profileError.message + "\n" +
-          "Código: " + profileError.code + "\n" +
-          "Detalle: " + (profileError.details || "ninguno")
-        );
-        throw new Error(profileError.message);
+      const json = await res.json();
+
+      if (!res.ok) {
+        const msg = json?.error || "Error desconocido al cambiar el rol";
+        console.error("❌ /api/set-role error:", json);
+        alert("❌ Error al cambiar el rol:\n" + msg);
+        throw new Error(msg);
       }
 
-      // 2. Sincronizar user_metadata en Supabase Auth para consistencia
-      const { error: metaError } = await supabase.auth.admin.updateUserById(
-        userId,
-        { user_metadata: { role: newRole } }
-      );
-
-      if (metaError) {
-        // No crítico — el rol ya está en profiles. Solo loguear.
-        console.warn("⚠️ No se pudo actualizar user_metadata (no crítico):", metaError.message);
-      }
-
-      setNotification({ msg: `Rol actualizado a ${newRole === "admin" ? "Administrador" : "Usuario"}`, type: "success" });
+      setNotification({
+        msg: `Rol actualizado a ${newRole === "admin" ? "Administrador" : "Usuario"}`,
+        type: "success",
+      });
       fetchUsers();
     } catch (err: any) {
       setNotification({ msg: err.message, type: "error" });
