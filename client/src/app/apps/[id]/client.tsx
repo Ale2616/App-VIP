@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -88,6 +88,64 @@ function ExpandableDescription({ text }: { text: string }) {
           </>
         )}
       </button>
+    </div>
+  );
+}
+
+function ScreenshotSlider({ screenshots }: { screenshots: string[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === "left" ? -300 : 300;
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
+
+  return (
+    <div className="relative group/slider">
+      {/* Left arrow */}
+      <button
+        type="button"
+        onClick={() => scroll("left")}
+        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full z-10 opacity-0 group-hover/slider:opacity-100 transition-opacity hidden md:flex items-center justify-center cursor-pointer"
+        aria-label="Anterior"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+
+      {/* Right arrow */}
+      <button
+        type="button"
+        onClick={() => scroll("right")}
+        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full z-10 opacity-0 group-hover/slider:opacity-100 transition-opacity hidden md:flex items-center justify-center cursor-pointer"
+        aria-label="Siguiente"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+
+      {/* Scrollable container */}
+      <div
+        ref={scrollRef}
+        className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 scrollbar-hide"
+      >
+        {screenshots.map((screenshot: string, idx: number) => (
+          <div key={idx} className="relative group snap-center shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500" />
+            <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800/50">
+              <img
+                src={screenshot}
+                alt={`Captura ${idx + 1}`}
+                className="w-auto h-72 sm:h-80 md:h-96 object-contain rounded-2xl transition-transform duration-500 group-hover:scale-105"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -533,20 +591,7 @@ export default function AppDetailClient() {
                 <Smartphone className="w-6 h-6 text-purple-400" />
                 Capturas de Pantalla
               </h3>
-              <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 scrollbar-hide">
-                {app.screenshots.map((screenshot: string, idx: number) => (
-                  <div key={idx} className="relative group snap-center shrink-0">
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500" />
-                    <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800/50">
-                      <img 
-                        src={screenshot} 
-                        alt={`Captura ${idx + 1}`} 
-                        className="w-auto h-72 sm:h-80 md:h-96 object-contain rounded-2xl transition-transform duration-500 group-hover:scale-105"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <ScreenshotSlider screenshots={app.screenshots} />
             </motion.div>
           )}
         </motion.div>
