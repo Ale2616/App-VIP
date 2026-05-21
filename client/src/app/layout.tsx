@@ -7,6 +7,7 @@ import { AuthProvider } from "@/components/providers/auth-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { Footer } from "@/components/Footer";
 import { Send } from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 const inter = Inter({ subsets: ["latin"] });
@@ -19,99 +20,122 @@ const SITE_NAME = "App VIP";
 const SITE_DESCRIPTION =
   "Descarga las mejores aplicaciones y juegos gratis en App VIP. Catálogo premium verificado con descargas directas, seguras y rápidas. ¡Miles de apps disponibles!";
 
-export const metadata: Metadata = {
-  // ─── Títulos ────────────────────────────────────────────
-  title: {
-    default: "App VIP — Descargar Aplicaciones y Juegos Gratis 2026",
-    template: "%s | App VIP",
-  },
-  description: SITE_DESCRIPTION,
+const supabaseServer = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-  // ─── Keywords ───────────────────────────────────────────
-  keywords: [
-    "descargar aplicaciones",
-    "descargar apps gratis",
-    "descargar juegos gratis",
-    "catálogo de aplicaciones",
-    "apps premium",
-    "juegos android",
-    "aplicaciones android",
-    "descargar APK",
-    "app store alternativa",
-    "apps verificadas",
-    "descargas seguras",
-    "App VIP",
-    "tienda de apps",
-    "mejores aplicaciones 2026",
-    "juegos móviles gratis",
-  ],
+export async function generateMetadata(): Promise<Metadata> {
+  // Obtener logo dinámico de site_settings
+  let logoUrl: string | null = null;
+  try {
+    const { data } = await supabaseServer
+      .from("site_settings")
+      .select("logo_url")
+      .eq("id", 1)
+      .single();
+    if (data?.logo_url) logoUrl = data.logo_url;
+  } catch {
+    // Si falla, se usa el favicon por defecto
+  }
 
-  // ─── Autor y creador ───────────────────────────────────
-  authors: [{ name: "App VIP Team" }],
-  creator: "App VIP",
-  publisher: "App VIP",
+  const faviconUrl = logoUrl || "/favicon.svg";
 
-  // ─── Robots / Indexación ───────────────────────────────
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+  return {
+    // ─── Títulos ────────────────────────────────────────────
+    title: {
+      default: "App VIP — Descargar Aplicaciones y Juegos Gratis 2026",
+      template: "%s | App VIP",
+    },
+    description: SITE_DESCRIPTION,
+
+    // ─── Keywords ───────────────────────────────────────────
+    keywords: [
+      "descargar aplicaciones",
+      "descargar apps gratis",
+      "descargar juegos gratis",
+      "catálogo de aplicaciones",
+      "apps premium",
+      "juegos android",
+      "aplicaciones android",
+      "descargar APK",
+      "app store alternativa",
+      "apps verificadas",
+      "descargas seguras",
+      "App VIP",
+      "tienda de apps",
+      "mejores aplicaciones 2026",
+      "juegos móviles gratis",
+    ],
+
+    // ─── Autor y creador ───────────────────────────────────
+    authors: [{ name: "App VIP Team" }],
+    creator: "App VIP",
+    publisher: "App VIP",
+
+    // ─── Robots / Indexación ───────────────────────────────
+    robots: {
       index: true,
       follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
-
-  // ─── Open Graph (Facebook, WhatsApp, Telegram, etc.) ──
-  openGraph: {
-    type: "website",
-    locale: "es_ES",
-    url: SITE_URL,
-    siteName: SITE_NAME,
-    title: "App VIP — Descargar Aplicaciones y Juegos Gratis",
-    description: SITE_DESCRIPTION,
-    images: [
-      {
-        url: `${SITE_URL}/og-image.png`,
-        width: 1200,
-        height: 630,
-        alt: "App VIP — Catálogo de Aplicaciones y Juegos",
-        type: "image/png",
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
       },
-    ],
-  },
+    },
 
-  // ─── Twitter Card ──────────────────────────────────────
-  twitter: {
-    card: "summary_large_image",
-    title: "App VIP — Descargar Aplicaciones y Juegos Gratis",
-    description: SITE_DESCRIPTION,
-    images: [`${SITE_URL}/og-image.png`],
-    creator: "@appvip",
-  },
+    // ─── Open Graph (Facebook, WhatsApp, Telegram, etc.) ──
+    openGraph: {
+      type: "website",
+      locale: "es_ES",
+      url: SITE_URL,
+      siteName: SITE_NAME,
+      title: "App VIP — Descargar Aplicaciones y Juegos Gratis",
+      description: SITE_DESCRIPTION,
+      images: [
+        {
+          url: `${SITE_URL}/og-image.png`,
+          width: 1200,
+          height: 630,
+          alt: "App VIP — Catálogo de Aplicaciones y Juegos",
+          type: "image/png",
+        },
+      ],
+    },
 
-  // ─── Otros meta tags ──────────────────────────────────
-  metadataBase: new URL(SITE_URL),
-  alternates: {
-    canonical: SITE_URL,
-  },
+    // ─── Twitter Card ──────────────────────────────────────
+    twitter: {
+      card: "summary_large_image",
+      title: "App VIP — Descargar Aplicaciones y Juegos Gratis",
+      description: SITE_DESCRIPTION,
+      images: [`${SITE_URL}/og-image.png`],
+      creator: "@appvip",
+    },
 
-  // ─── Favicon ──────────────────────────────────────────
-  icons: {
-    icon: "/favicon.svg",
-    apple: "/favicon.svg",
-  },
+    // ─── Otros meta tags ──────────────────────────────────
+    metadataBase: new URL(SITE_URL),
+    alternates: {
+      canonical: SITE_URL,
+    },
 
-  // ─── Categoría y clasificación ────────────────────────
-  category: "Technology",
+    // ─── Favicon dinámico (sincronizado con logo del Panel Pro) ──
+    icons: {
+      icon: faviconUrl,
+      shortcut: faviconUrl,
+      apple: faviconUrl,
+    },
 
-  // ─── Verificación Google Search Console ────────────────
-  verification: {
-    google: "n1zBtL_y2eOufZ6TcamlXcltJ2kIxUdtJ72N7ATlK8w",
-  },
-};
+    // ─── Categoría y clasificación ────────────────────────
+    category: "Technology",
+
+    // ─── Verificación Google Search Console ────────────────
+    verification: {
+      google: "n1zBtL_y2eOufZ6TcamlXcltJ2kIxUdtJ72N7ATlK8w",
+    },
+  };
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
