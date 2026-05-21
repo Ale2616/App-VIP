@@ -27,6 +27,8 @@ import {
   Loader2,
   FileDown,
   HardDrive,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,6 +57,37 @@ function FloatingParticles() {
           }}
         />
       ))}
+    </div>
+  );
+}
+
+function ExpandableDescription({ text }: { text: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div>
+      <p
+        className={`text-slate-300 whitespace-pre-wrap leading-relaxed transition-all duration-300 ${
+          isExpanded ? "" : "line-clamp-4"
+        }`}
+      >
+        {text}
+      </p>
+      <button
+        type="button"
+        onClick={() => setIsExpanded((prev) => !prev)}
+        className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
+      >
+        {isExpanded ? (
+          <>
+            Leer menos <ChevronUp className="w-4 h-4" />
+          </>
+        ) : (
+          <>
+            Leer más <ChevronDown className="w-4 h-4" />
+          </>
+        )}
+      </button>
     </div>
   );
 }
@@ -373,7 +406,7 @@ export default function AppDetailClient() {
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-invert max-w-none">
-                    <p className="text-slate-300 whitespace-pre-wrap leading-relaxed">{app.description}</p>
+                    <ExpandableDescription text={app.description} />
                   </div>
                 </CardContent>
               </Card>
@@ -500,16 +533,15 @@ export default function AppDetailClient() {
                 <Smartphone className="w-6 h-6 text-purple-400" />
                 Capturas de Pantalla
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 scrollbar-hide">
                 {app.screenshots.map((screenshot: string, idx: number) => (
-                  <div key={idx} className="relative group">
+                  <div key={idx} className="relative group snap-center shrink-0">
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500" />
                     <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800/50">
                       <img 
                         src={screenshot} 
                         alt={`Captura ${idx + 1}`} 
-                        className="w-full aspect-auto md:aspect-[9/16] object-cover transition-transform duration-500 group-hover:scale-105"
-                        style={{ maxHeight: '600px' }}
+                        className="w-auto h-72 sm:h-80 md:h-96 object-contain rounded-2xl transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
                   </div>
