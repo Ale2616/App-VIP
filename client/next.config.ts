@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
         hostname: "wzeklbcmloxxvzqtxocq.supabase.co",
         pathname: "/storage/v1/object/public/**",
       },
+      {
+        protocol: "https",
+        hostname: "play-lh.googleusercontent.com",
+        pathname: "/**",
+      },
     ],
   },
 };

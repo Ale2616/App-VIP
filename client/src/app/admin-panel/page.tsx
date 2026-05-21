@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/auth-store";
 import {
   Plus, Pencil, Trash2, ExternalLink, Loader2, Download,
-  Image as ImageIcon, X, Search, AlertTriangle,
+  Image as ImageIcon, X, Search, AlertTriangle, Globe,
   CheckCircle2, Database, Zap, ArrowLeft, Crown,
   Sparkles, AppWindow, Gamepad2, Bot, Users, Shield, Mail,
   Settings, ImagePlus,
@@ -592,6 +592,53 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
     image_url: app?.image_url || "",
   });
 
+  // ── Scraper / Autocompletar ──
+  const [scraperAppId, setScraperAppId] = useState("");
+  const [scraperLoading, setScraperLoading] = useState(false);
+  const [scraperError, setScraperError] = useState<string | null>(null);
+
+  const handleAutoComplete = async () => {
+    const id = scraperAppId.trim();
+    if (!id) return;
+    setScraperLoading(true);
+    setScraperError(null);
+    try {
+      const res = await fetch("/api/admin/scraper", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appId: id }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Error desconocido");
+
+      // Rellenar campos
+      setFormData(prev => ({
+        ...prev,
+        name: json.title || prev.name,
+        description: json.description || prev.description,
+      }));
+
+      // Icon como preview
+      if (json.icon) {
+        setPreview(json.icon);
+        setFile(null); // limpia archivo local, usaremos la URL
+      }
+
+      // Screenshots
+      if (json.screenshots && json.screenshots.length > 0) {
+        const scraped: ScreenshotItem[] = json.screenshots.map((url: string) => ({
+          id: `scraper-${Math.random().toString(36).substring(7)}`,
+          url,
+        }));
+        setScreenshots(scraped);
+      }
+    } catch (err: any) {
+      setScraperError(err.message || "Error al buscar la app");
+    } finally {
+      setScraperLoading(false);
+    }
+  };
+
   // Download options state
   const genId = () => {
     try { return crypto.randomUUID(); } catch { return `opt-${Date.now()}-${Math.random().toString(36).slice(2)}`; }
@@ -692,6 +739,9 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
           alert("Error al subir el icono: " + uploadErr.message);
           throw uploadErr;
         }
+      } else if (preview && preview.startsWith("http") && !file) {
+        // URL directa del scraper (sin archivo local)
+        finalIconUrl = preview;
       }
 
       // ── 2. Subir capturas de pantalla ──
@@ -804,6 +854,39 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
 
         {/* Formulario */}
         <form onSubmit={handleSave} className="p-4 sm:p-7 overflow-y-auto space-y-6 flex-1">
+          {/* ═══ AUTOCOMPLETAR DESDE GOOGLE PLAY ═══ */}
+          <div className="bg-gradient-to-r from-blue-500/5 to-cyan-500/5 border border-blue-500/20 rounded-xl p-4">
+            <label className="text-xs font-semibold text-blue-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+              <Globe size={14} className="text-blue-400" />
+              ID de Google Play (Opcional)
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="com.whatsapp"
+                className="flex-1 bg-slate-900/80 border border-slate-700/50 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all font-mono text-sm text-blue-300 placeholder:text-slate-600"
+                value={scraperAppId}
+                onChange={(e) => setScraperAppId(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAutoComplete(); } }}
+              />
+              <button
+                type="button"
+                disabled={scraperLoading || !scraperAppId.trim()}
+                onClick={handleAutoComplete}
+                className="shrink-0 flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+              >
+                {scraperLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                {scraperLoading ? "Buscando..." : "Autocompletar Datos"}
+              </button>
+            </div>
+            {scraperError && (
+              <p className="text-xs text-red-400 mt-2 flex items-center gap-1.5">
+                <AlertTriangle size={12} /> {scraperError}
+              </p>
+            )}
+            <p className="text-[11px] text-slate-500 mt-1.5">Ingresa el ID del paquete de Google Play para rellenar automáticamente Nombre, Descripción, Logo y Capturas.</p>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
             {/* Izquierda */}
             <div className="space-y-4">
