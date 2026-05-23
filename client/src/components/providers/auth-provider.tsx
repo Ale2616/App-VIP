@@ -40,7 +40,7 @@ async function loadProfileFromDB(
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { setProfile, clearAuth, setLoading } = useAuthStore();
+  const { setProfile, clearAuth, setLoading, isLoading } = useAuthStore();
   const hasInitialized = useRef(false);
 
   useEffect(() => {
@@ -88,6 +88,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, [setProfile, clearAuth, setLoading]);
+
+  // ── Auth Gate: pantalla de carga mientras se verifica la sesión ──
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black">
+        <div className="relative mb-6">
+          <div className="w-12 h-12 rounded-full border-2 border-purple-500/30 border-t-purple-500 animate-spin" />
+        </div>
+        <p className="text-sm text-slate-400 font-medium animate-pulse">
+          Verificando sesión...
+        </p>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }
