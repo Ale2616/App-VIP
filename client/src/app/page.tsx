@@ -14,17 +14,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Download, Crown, LogOut, User, TrendingUp, Gamepad2, AppWindow,
   Bot, Search, X, Star, Zap, Shield, Globe, ChevronRight, Rocket,
-  Sparkles, Upload, Mail, Calendar, MessageSquare, Send,
+  Sparkles, Upload, Mail, Calendar, MessageSquare, Send, Monitor,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { App } from "@/types";
 
-type CategoryFilter = "all" | "juegos" | "aplicaciones" | "popular" | "most-downloaded";
+type CategoryFilter = "all" | "Aplicaciones" | "Juegos" | "Juegos PC" | "Software PC" | "popular" | "most-downloaded";
 
 const categories = [
   { id: "all" as const, label: "Todos", icon: Bot, color: "from-purple-500 to-fuchsia-500" },
-  { id: "juegos" as const, label: "Juegos", icon: Gamepad2, color: "from-blue-500 to-cyan-500" },
-  { id: "aplicaciones" as const, label: "Aplicaciones", icon: AppWindow, color: "from-green-500 to-emerald-500" },
+  { id: "Aplicaciones" as const, label: "Aplicaciones", icon: AppWindow, color: "from-green-500 to-emerald-500" },
+  { id: "Juegos" as const, label: "Juegos", icon: Gamepad2, color: "from-blue-500 to-cyan-500" },
+  { id: "Juegos PC" as const, label: "Juegos PC", icon: Monitor, color: "from-indigo-500 to-violet-500" },
+  { id: "Software PC" as const, label: "Software PC", icon: Monitor, color: "from-teal-500 to-emerald-500" },
   { id: "popular" as const, label: "Populares", icon: TrendingUp, color: "from-amber-500 to-orange-500" },
   { id: "most-downloaded" as const, label: "Descargados", icon: Download, color: "from-pink-500 to-rose-500" },
 ];
@@ -209,7 +211,8 @@ export default function HomePage() {
   const [showHero, setShowHero] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
 
-  const category = activeCategory === "all" || activeCategory === "popular" || activeCategory === "most-downloaded" ? undefined : activeCategory;
+  const isSpecial = activeCategory === "all" || activeCategory === "popular" || activeCategory === "most-downloaded";
+  const category = isSpecial ? undefined : activeCategory;
   const mostDownloaded = activeCategory === "most-downloaded" || activeCategory === "popular";
 
   const { data, isLoading } = useApps(category, mostDownloaded);

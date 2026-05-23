@@ -8,7 +8,7 @@ import {
   Image as ImageIcon, X, Search, AlertTriangle, Globe,
   CheckCircle2, Database, Zap, ArrowLeft, Crown,
   Sparkles, AppWindow, Gamepad2, Bot, Users, Shield, Mail,
-  Settings, ImagePlus,
+  Settings, ImagePlus, Monitor,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -31,7 +31,7 @@ interface Application {
   name: string;
   description: string;
   version: string;
-  category: "Aplicación" | "Juego";
+  category: "Aplicaciones" | "Juegos" | "Juegos PC" | "Software PC";
   download_url: string;
   image_url: string;
   icon_url?: string;
@@ -208,7 +208,9 @@ export default function AdminPanel() {
   const filteredApps = useMemo(() => {
     return apps.filter((app) => {
       const matchesSearch = app.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = activeCategory === "TODOS" || app.category.toUpperCase() === activeCategory;
+      const matchesCategory =
+        activeCategory === "TODOS" ||
+        app.category?.toLowerCase().trim() === activeCategory.toLowerCase().trim();
       return matchesSearch && matchesCategory;
     });
   }, [apps, searchTerm, activeCategory]);
@@ -231,8 +233,10 @@ export default function AdminPanel() {
 
   const categoryFilters = [
     { key: "TODOS", label: "Todos", icon: Sparkles, gradient: "from-purple-500 to-fuchsia-500" },
-    { key: "APLICACIÓN", label: "Apps", icon: AppWindow, gradient: "from-blue-500 to-cyan-500" },
-    { key: "JUEGO", label: "Juegos", icon: Gamepad2, gradient: "from-amber-500 to-orange-500" },
+    { key: "Aplicaciones", label: "Apps", icon: AppWindow, gradient: "from-blue-500 to-cyan-500" },
+    { key: "Juegos", label: "Juegos", icon: Gamepad2, gradient: "from-amber-500 to-orange-500" },
+    { key: "Juegos PC", label: "Juegos PC", icon: Monitor, gradient: "from-indigo-500 to-violet-500" },
+    { key: "Software PC", label: "Software PC", icon: Monitor, gradient: "from-teal-500 to-emerald-500" },
   ];
 
   return (
@@ -412,18 +416,26 @@ export default function AdminPanel() {
         {/* Estadísticas y apps (solo en tab apps) */}
         {activeTab === "apps" && (
         <>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-800/50">
             <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-fuchsia-500"><AppWindow className="w-4 h-4 text-white" /></div>
-            <div><p className="text-xl font-bold text-white">{apps.length}</p><p className="text-[11px] text-slate-500">Total Apps</p></div>
+            <div><p className="text-xl font-bold text-white">{apps.length}</p><p className="text-[11px] text-slate-500">Total</p></div>
           </div>
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-800/50">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500"><Gamepad2 className="w-4 h-4 text-white" /></div>
-            <div><p className="text-xl font-bold text-white">{apps.filter(a => a.category === "Juego").length}</p><p className="text-[11px] text-slate-500">Juegos</p></div>
+            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500"><AppWindow className="w-4 h-4 text-white" /></div>
+            <div><p className="text-xl font-bold text-white">{apps.filter(a => a.category?.toLowerCase().trim() === "aplicaciones").length}</p><p className="text-[11px] text-slate-500">Apps</p></div>
+          </div>
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-800/50">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500"><Gamepad2 className="w-4 h-4 text-white" /></div>
+            <div><p className="text-xl font-bold text-white">{apps.filter(a => a.category?.toLowerCase().trim() === "juegos").length}</p><p className="text-[11px] text-slate-500">Juegos</p></div>
           </div>
           <div className="hidden md:flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-800/50">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500"><CheckCircle2 className="w-4 h-4 text-white" /></div>
-            <div><p className="text-xl font-bold text-white">{apps.filter(a => a.category === "Aplicación").length}</p><p className="text-[11px] text-slate-500">Aplicaciones</p></div>
+            <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500"><Monitor className="w-4 h-4 text-white" /></div>
+            <div><p className="text-xl font-bold text-white">{apps.filter(a => a.category?.toLowerCase().trim() === "juegos pc").length}</p><p className="text-[11px] text-slate-500">Juegos PC</p></div>
+          </div>
+          <div className="hidden md:flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-800/50">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500"><Monitor className="w-4 h-4 text-white" /></div>
+            <div><p className="text-xl font-bold text-white">{apps.filter(a => a.category?.toLowerCase().trim() === "software pc").length}</p><p className="text-[11px] text-slate-500">Software PC</p></div>
           </div>
         </div>
 
@@ -587,7 +599,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
     name: app?.name || "",
     description: app?.description || "",
     version: app?.version || "1.0.0",
-    category: app?.category || "Aplicación",
+    category: app?.category || "Aplicaciones",
     download_url: app?.download_url || "",
     image_url: app?.image_url || "",
   });
@@ -909,8 +921,10 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                   <select
                     className="w-full bg-slate-900/80 border border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-medium text-slate-300 appearance-none cursor-pointer text-sm"
                     value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}>
-                    <option value="Aplicación">Aplicación</option>
-                    <option value="Juego">Juego</option>
+                    <option value="Aplicaciones">Aplicaciones</option>
+                    <option value="Juegos">Juegos</option>
+                    <option value="Juegos PC">Juegos PC</option>
+                    <option value="Software PC">Software PC</option>
                   </select>
                 </div>
               </div>
