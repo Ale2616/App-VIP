@@ -154,7 +154,7 @@ function Footer({ logoUrl }: { logoUrl?: string | null }) {
               {logoUrl ? (
                 <img src={logoUrl} alt="App VIP" className="w-10 h-10 rounded-lg object-contain" />
               ) : (
-                <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-lg"><Bot className="w-5 h-5 text-white" /></div>
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white flex items-center justify-center rounded-lg font-bold text-xs shadow-lg">VIP</div>
               )}
               <span className="text-xl font-bold text-white">App VIP</span>
             </div>
@@ -243,7 +243,7 @@ export default function HomePage() {
             {logoUrl ? (
               <img src={logoUrl} alt="App VIP" className="w-10 h-10 rounded-xl object-contain shadow-lg" />
             ) : (
-              <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-xl shadow-lg shadow-purple-500/20"><Bot className="w-5 h-5 text-white" /></div>
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white flex items-center justify-center rounded-xl font-bold text-xs shadow-lg shadow-purple-500/20">VIP</div>
             )}
             <span className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">App VIP</span>
           </Link>

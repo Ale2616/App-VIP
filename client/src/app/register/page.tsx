@@ -101,7 +101,7 @@ export default function RegisterPage() {
           <CardHeader className="text-center pb-2">
             <div className="mb-4 flex justify-center">
               <div className="p-3 bg-gradient-to-br from-fuchsia-500 to-purple-600 rounded-2xl shadow-lg shadow-fuchsia-500/30 relative">
-                <Bot className="w-8 h-8 text-white" />
+                <span className="text-xl font-bold text-white">VIP</span>
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full animate-pulse" />
               </div>
             </div>

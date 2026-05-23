@@ -63,7 +63,7 @@ function UploadContent() {
       name: "",
       description: "",
       version: "1.0.0",
-      category: "aplicaciones",
+      category: "Aplicaciones",
       download_url: "",
     },
   });
@@ -214,7 +214,7 @@ function UploadContent() {
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-400">
             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center">
-              <Bot className="w-3 h-3 text-white" />
+              <span className="text-[10px] font-bold text-white">VIP</span>
             </div>
             <span>{profile?.name}</span>
           </div>
@@ -390,8 +390,10 @@ function UploadContent() {
                         {...register("category")}
                         className="w-full h-11 rounded-lg border border-slate-800 bg-slate-950/50 px-3 text-white text-sm focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/30 transition-colors"
                       >
-                        <option value="aplicaciones">📱 Aplicación</option>
-                        <option value="juegos">🎮 Juego</option>
+                        <option value="Aplicaciones">📱 Aplicaciones</option>
+                        <option value="Juegos">🎮 Juegos</option>
+                        <option value="Juegos PC">🖥️ Juegos PC</option>
+                        <option value="Software PC">💻 Software PC</option>
                       </select>
                       {errors.category && (
                         <p className="text-sm text-red-400">

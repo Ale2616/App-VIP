@@ -246,7 +246,7 @@ export default function AppDetailClient() {
             animate={{ opacity: 1, y: 0 }}
             className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-900/50 border border-slate-800 flex items-center justify-center"
           >
-            <Bot className="w-10 h-10 text-slate-600" />
+            <span className="text-2xl font-bold text-slate-600">VIP</span>
           </motion.div>
           <p className="text-slate-400 text-lg mb-6">Aplicación no encontrada</p>
           <Link href="/">
@@ -319,7 +319,7 @@ export default function AppDetailClient() {
               {(app.icon_url || app.image_url) ? (
                  <img src={app.icon_url || app.image_url || undefined} alt={app.name} className="w-32 h-32 md:w-40 md:h-40 rounded-[2rem] object-cover relative z-10 shadow-2xl border-2 border-slate-800/50" />
                ) : (
-                 <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2rem] bg-slate-800 flex items-center justify-center relative z-10 shadow-2xl border-2 border-slate-800/50"><Bot className="w-16 h-16 text-slate-600" /></div>
+                 <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2rem] bg-slate-800 flex items-center justify-center relative z-10 shadow-2xl border-2 border-slate-800/50"><span className="text-3xl font-bold text-slate-600">VIP</span></div>
                )}
             </motion.div>
 
