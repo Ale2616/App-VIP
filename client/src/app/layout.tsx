@@ -26,6 +26,10 @@ const supabaseServer = createClient(
 );
 
 export async function generateMetadata(): Promise<Metadata> {
+  // URL de respaldo obligatoria — logo oficial de App VIP en Supabase Storage
+  const FALLBACK_LOGO =
+    "https://wzeklbcmloxxvzqtxocq.supabase.co/storage/v1/object/public/app-images/logo-appvip.png";
+
   // Obtener logo dinámico de site_settings
   let logoUrl: string | null = null;
   try {
@@ -36,10 +40,10 @@ export async function generateMetadata(): Promise<Metadata> {
       .single();
     if (data?.logo_url) logoUrl = data.logo_url;
   } catch {
-    // Si falla, se usa el favicon por defecto
+    // Si falla, se usa FALLBACK_LOGO
   }
 
-  const faviconUrl = logoUrl || "/favicon.svg";
+  const faviconUrl = logoUrl || FALLBACK_LOGO;
 
   return {
     // ─── Títulos ────────────────────────────────────────────
