@@ -26,15 +26,19 @@ async function loadProfileFromDB(
   setProfile: (p: Profile) => void,
   clearAuth: () => void
 ) {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
 
-  if (profile) {
-    setProfile(enrichProfile(profile, authUser));
-  } else {
+    if (profile) {
+      setProfile(enrichProfile(profile, authUser));
+    } else {
+      clearAuth();
+    }
+  } catch {
     clearAuth();
   }
 }
@@ -62,6 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch {
         clearAuth();
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -71,16 +77,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (
-        (event === "SIGNED_IN" ||
-          event === "TOKEN_REFRESHED" ||
-          event === "USER_UPDATED") &&
-        session?.user
-      ) {
-        // Siempre re-lee el rol desde la tabla profiles para evitar datos obsoletos
-        await loadProfileFromDB(session.user.id, session.user, setProfile, clearAuth);
-      } else if (event === "SIGNED_OUT") {
+      try {
+        if (
+          (event === "SIGNED_IN" ||
+            event === "TOKEN_REFRESHED" ||
+            event === "USER_UPDATED") &&
+          session?.user
+        ) {
+          // Siempre re-lee el rol desde la tabla profiles para evitar datos obsoletos
+          await loadProfileFromDB(session.user.id, session.user, setProfile, clearAuth);
+        } else if (event === "SIGNED_OUT") {
+          clearAuth();
+        } else {
+          // Para cualquier otro evento de auth no contemplado, garantizar que no quede loading
+          setLoading(false);
+        }
+      } catch {
         clearAuth();
+      } finally {
+        setLoading(false);
       }
     });
 
