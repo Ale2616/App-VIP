@@ -1,16 +1,11 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAuthStore } from "@/store/auth-store";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/types";
 
-/**
- * Enriquece el perfil de la base de datos con datos de la sesión de Supabase Auth.
- * Esto asegura que email y created_at siempre tengan valor,
- * incluso si la tabla profiles no los tiene populados.
- */
 function enrichProfile(profile: Profile, authUser: User): Profile {
   return {
     ...profile,
@@ -19,7 +14,6 @@ function enrichProfile(profile: Profile, authUser: User): Profile {
   };
 }
 
-/** Obtiene el perfil desde la tabla profiles y lo inyecta en el store. */
 async function loadProfileFromDB(
   userId: string,
   authUser: User,
@@ -33,34 +27,34 @@ async function loadProfileFromDB(
       .eq("id", userId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.warn("Aviso: No se encontró perfil en la BD. Usando datos básicos.");
+      // Si no hay perfil en la BD, creamos uno básico para NO romper la sesión
+      setProfile(enrichProfile({ id: userId } as Profile, authUser));
+      return;
+    }
 
     if (profile) {
       setProfile(enrichProfile(profile, authUser));
-    } else {
-      clearAuth();
     }
   } catch (error) {
-    console.error("Error cargando perfil:", error);
-    clearAuth();
+    console.error("Error crítico cargando perfil:", error);
+    // Ya no hacemos clearAuth() aquí para evitar el bucle infinito
   }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { setProfile, clearAuth, setLoading, isLoading } = useAuthStore();
+  const { setProfile, clearAuth, setLoading } = useAuthStore();
+
+  // 🛡️ ESCUDO LOCAL: Se controla a sí mismo y se destruye al abrirse
+  const [showGate, setShowGate] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
 
-    // Fetch current session on mount
     const initAuth = async () => {
       try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
-
-        if (error) throw error;
+        const { data: { session } } = await supabase.auth.getSession();
 
         if (session?.user) {
           await loadProfileFromDB(session.user.id, session.user, setProfile, clearAuth);
@@ -72,53 +66,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearAuth();
       } finally {
         if (isMounted) {
-          setLoading(false); // ¡LA COMPUERTA SE ABRE A LA FUERZA AQUÍ!
+          setShowGate(false); // ¡DESTRUYE EL ESCUDO!
+          setLoading(false);  // Por si acaso sincronizamos
         }
       }
     };
 
     initAuth();
 
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       try {
-        if (
-          (event === "SIGNED_IN" ||
-            event === "TOKEN_REFRESHED" ||
-            event === "USER_UPDATED") &&
-          session?.user
-        ) {
+        if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session?.user) {
           await loadProfileFromDB(session.user.id, session.user, setProfile, clearAuth);
         } else if (event === "SIGNED_OUT") {
           clearAuth();
         }
       } catch (error) {
-        console.error("Error en onAuthStateChange:", error);
-        clearAuth();
+        console.error("Error en auth event:", error);
       } finally {
         if (isMounted) {
-          setLoading(false); // ¡LA COMPUERTA SE ABRE A LA FUERZA AQUÍ TAMBIÉN!
+          setShowGate(false);
+          setLoading(false);
         }
       }
     });
 
+    // 💣 SEGURO DE VIDA EXTREMO: Si en 2 segundos no ha cargado, se abre a la fuerza
+    const failsafe = setTimeout(() => {
+      if (isMounted) {
+        setShowGate(false);
+        setLoading(false);
+      }
+    }, 2000);
+
     return () => {
       isMounted = false;
+      clearTimeout(failsafe);
       subscription.unsubscribe();
     };
-  }, [setProfile, clearAuth, setLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // ── Auth Gate: pantalla de carga mientras se verifica la sesión ──
-  if (isLoading) {
+  // ── Auth Gate: pantalla de carga temporal ──
+  if (showGate) {
     return (
       <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black">
         <div className="relative mb-6">
-          <div className="w-12 h-12 rounded-full border-2 border-purple-500/30 border-t-purple-500 animate-spin" />
+          <div className="w-12 h-12 rounded-full border-2 border-indigo-500/30 border-t-indigo-500 animate-spin" />
         </div>
         <p className="text-sm text-slate-400 font-medium animate-pulse">
-          Verificando sesión...
+          Autenticando VIP...
         </p>
       </div>
     );
