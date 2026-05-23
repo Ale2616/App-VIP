@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useAuthStore } from "@/store/auth-store";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
@@ -27,53 +27,59 @@ async function loadProfileFromDB(
   clearAuth: () => void
 ) {
   try {
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
+
+    if (error) throw error;
 
     if (profile) {
       setProfile(enrichProfile(profile, authUser));
     } else {
       clearAuth();
     }
-  } catch {
+  } catch (error) {
+    console.error("Error cargando perfil:", error);
     clearAuth();
   }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { setProfile, clearAuth, setLoading, isLoading } = useAuthStore();
-  const hasInitialized = useRef(false);
 
   useEffect(() => {
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
+    let isMounted = true;
 
     // Fetch current session on mount
     const initAuth = async () => {
-      setLoading(true);
       try {
         const {
           data: { session },
+          error,
         } = await supabase.auth.getSession();
+
+        if (error) throw error;
 
         if (session?.user) {
           await loadProfileFromDB(session.user.id, session.user, setProfile, clearAuth);
         } else {
           clearAuth();
         }
-      } catch {
+      } catch (error) {
+        console.error("Error en initAuth:", error);
         clearAuth();
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false); // ¡LA COMPUERTA SE ABRE A LA FUERZA AQUÍ!
+        }
       }
     };
 
     initAuth();
 
-    // Listen for auth state changes (login, logout, token refresh, role update)
+    // Listen for auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -84,22 +90,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             event === "USER_UPDATED") &&
           session?.user
         ) {
-          // Siempre re-lee el rol desde la tabla profiles para evitar datos obsoletos
           await loadProfileFromDB(session.user.id, session.user, setProfile, clearAuth);
         } else if (event === "SIGNED_OUT") {
           clearAuth();
-        } else {
-          // Para cualquier otro evento de auth no contemplado, garantizar que no quede loading
-          setLoading(false);
         }
-      } catch {
+      } catch (error) {
+        console.error("Error en onAuthStateChange:", error);
         clearAuth();
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false); // ¡LA COMPUERTA SE ABRE A LA FUERZA AQUÍ TAMBIÉN!
+        }
       }
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [setProfile, clearAuth, setLoading]);
