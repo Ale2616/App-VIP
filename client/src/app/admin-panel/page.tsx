@@ -118,6 +118,11 @@ export default function AdminPanel() {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecciona únicamente un archivo de imagen (PNG, JPG, WEBP).');
+      e.target.value = '';
+      return;
+    }
 
     setUploadingLogo(true);
     try {
@@ -355,7 +360,7 @@ export default function AdminPanel() {
               <div className="flex items-center gap-3">
                 <input
                   type="file"
-                  accept="image/png, image/jpeg, image/webp"
+                  accept="*/*"
                   onChange={handleLogoUpload}
                   disabled={uploadingLogo}
                   className="w-full min-w-0 text-sm text-slate-300 bg-slate-900/80 border border-slate-700/50 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-black file:cursor-pointer hover:file:bg-amber-400 transition-all"
@@ -686,12 +691,27 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) { setFile(f); setPreview(URL.createObjectURL(f)); }
+    if (!f) return;
+    if (!f.type.startsWith('image/')) {
+      alert('Por favor, selecciona únicamente un archivo de imagen (PNG, JPG, WEBP).');
+      e.target.value = '';
+      return;
+    }
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
   };
 
   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const newItems = files.map(f => ({
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    if (imageFiles.length < files.length) {
+      alert('Algunos archivos no son imágenes y fueron descartados. Solo se aceptan PNG, JPG, WEBP.');
+    }
+    if (imageFiles.length === 0) {
+      e.target.value = '';
+      return;
+    }
+    const newItems = imageFiles.map(f => ({
       id: Math.random().toString(36).substring(7),
       file: f,
       url: URL.createObjectURL(f)
@@ -956,7 +976,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                     <div className="relative aspect-video rounded-lg border-2 border-dashed border-slate-700 hover:border-purple-500/40 flex flex-col items-center justify-center cursor-pointer overflow-hidden">
                       <Plus className="text-slate-500 mb-1" size={20} />
                       <span className="text-[10px] text-slate-500 font-medium">Añadir</span>
-                      <input type="file" accept="image/png, image/jpeg, image/webp" multiple onChange={handleScreenshotChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                      <input type="file" accept="*/*" multiple onChange={handleScreenshotChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                     </div>
                   </div>
                 </div>
@@ -976,7 +996,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                       <p className="text-xs font-medium">Clic para cargar imagen</p>
                     </div>
                   )}
-                  <input type="file" accept="image/png, image/jpeg, image/webp"
+                  <input type="file" accept="*/*"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
                     onChange={handleFileChange} />
                   <div className="absolute inset-0 bg-gradient-to-t from-purple-600/40 to-fuchsia-600/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm z-20 pointer-events-none">

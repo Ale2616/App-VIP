@@ -71,6 +71,11 @@ function UploadContent() {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecciona únicamente un archivo de imagen (PNG, JPG, WEBP).');
+      e.target.value = '';
+      return;
+    }
     setImageFile(file);
     const reader = new FileReader();
     reader.onloadend = () => setImagePreview(reader.result as string);
@@ -293,7 +298,7 @@ function UploadContent() {
                       <input
                         ref={imageInputRef}
                         type="file"
-                        accept="image/png, image/jpeg, image/webp"
+                        accept="*/*"
                         onChange={handleImageSelect}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
                       />
