@@ -1,5 +1,7 @@
 "use client";
 
+import { useAuthStore } from "@/store/auth-store";
+
 import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -29,6 +31,8 @@ import {
   HardDrive,
   ChevronDown,
   ChevronUp,
+  Lock,
+  Crown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -154,11 +158,17 @@ export default function AppDetailClient() {
   const params = useParams();
   const router = useRouter();
   const { data, isLoading } = useApp(params.id as string);
+  const { isVip } = useAuthStore();
   const [downloadCount, setDownloadCount] = useState<number | null>(null);
   const [downloading, setDownloading] = useState(false);
 
   // Use local count if available, otherwise fall back to fetched data
   const currentCount = downloadCount ?? data?.app?.download_count ?? 0;
+
+  // Determina si el contenido es premium (campo is_premium O categoría "Juegos PC")
+  const isPremiumContent =
+    data?.app?.is_premium === true ||
+    data?.app?.category?.toLowerCase().trim() === "juegos pc";
 
   const handleDownload = async () => {
     if (!data?.app?.download_url) {
@@ -362,73 +372,104 @@ export default function AppDetailClient() {
               transition={{ delay: 0.5 }}
               className="w-full max-w-lg mb-8"
             >
-              {/* If download_options exist, show option cards */}
-              {app.download_options && app.download_options.length > 0 ? (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-1">
-                    <FileDown className="w-4 h-4 text-emerald-400" />
-                    Opciones de Descarga
-                  </h3>
-                  {app.download_options.map((opt: any, idx: number) => {
-                    const isDownloading = downloadingOptionId === opt.url;
-                    return (
-                      <motion.button
-                        key={idx}
-                        type="button"
-                        disabled={isDownloading}
-                        onClick={() => handleOptionDownload(opt.url, opt.title)}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                        className="w-full flex items-center gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/50 hover:border-emerald-500/30 hover:bg-slate-900/80 transition-all group cursor-pointer disabled:opacity-60 disabled:cursor-wait"
-                      >
-                        {/* Icon */}
-                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/20 group-hover:from-emerald-500/30 group-hover:to-green-500/30 transition-all shrink-0">
-                          {isDownloading ? (
-                            <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
-                          ) : (
-                            <Download className="w-5 h-5 text-emerald-400" />
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 text-left min-w-0">
-                          <p className="text-white font-semibold text-sm truncate">{opt.title}</p>
-                          {opt.version && (
-                            <p className="text-xs text-slate-500 mt-0.5">{opt.version}</p>
-                          )}
-                        </div>
-
-                        {/* Size badge */}
-                        {opt.size && (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/50 shrink-0">
-                            <HardDrive className="w-3 h-3 text-slate-500" />
-                            <span className="text-xs font-medium text-slate-400">{opt.size}</span>
-                          </div>
-                        )}
-
-                        {/* Arrow */}
-                        <ExternalLink className="w-4 h-4 text-slate-600 group-hover:text-emerald-400 transition-colors shrink-0" />
-                      </motion.button>
-                    );
-                  })}
+              {/* ── PREMIUM LOCK ── */}
+              {isPremiumContent && !isVip ? (
+                <div className="space-y-4">
+                  <div className="relative overflow-hidden rounded-2xl border-2 border-purple-500/30 bg-gradient-to-br from-purple-500/5 via-slate-900/80 to-fuchsia-500/5 p-6 text-center">
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-fuchsia-500/5 animate-pulse" />
+                    <div className="relative z-10">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                        <Lock className="w-7 h-7 text-white" />
+                      </div>
+                      <h3 className="text-lg font-bold text-white mb-1">Contenido VIP Exclusivo</h3>
+                      <p className="text-sm text-slate-400 mb-5">
+                        Esta descarga está disponible solo para miembros VIP Premium y Élite.
+                      </p>
+                      <Link href="/planes">
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
+                          className="w-full inline-flex items-center justify-center bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-600 hover:to-fuchsia-700 py-4 text-lg font-semibold shadow-2xl shadow-purple-500/25 hover:shadow-purple-500/40 relative overflow-hidden group rounded-2xl text-white transition-all cursor-pointer"
+                        >
+                          <motion.span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0" animate={{ x: ["-100%", "100%"] }} transition={{ duration: 2, repeat: Infinity }} />
+                          <Crown className="w-6 h-6 mr-2" /> Desbloquear con VIP
+                        </motion.button>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                /* Fallback: single download button */
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <button
-                    type="button"
-                    disabled={downloading}
-                    onClick={handleDownload}
-                    className="w-full inline-flex items-center justify-center bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 hover:from-green-600 hover:via-emerald-600 hover:to-green-600 py-4 text-lg font-semibold shadow-2xl shadow-green-500/25 hover:shadow-green-500/40 relative overflow-hidden group rounded-2xl text-white transition-all disabled:opacity-70 disabled:cursor-wait cursor-pointer"
-                  >
-                    <motion.span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0" animate={{ x: ["-100%", "100%"] }} transition={{ duration: 2, repeat: Infinity }} />
-                    {downloading ? (
-                      <><Loader2 className="w-6 h-6 mr-2 animate-spin" /> Procesando...</>
-                    ) : (
-                      <><Download className="w-6 h-6 mr-2" /> Descargar Ahora <ExternalLink className="w-5 h-5 ml-2 opacity-50" /></>
-                    )}
-                  </button>
-                </motion.div>
+                <>
+                  {/* If download_options exist, show option cards */}
+                  {app.download_options && app.download_options.length > 0 ? (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-1">
+                        <FileDown className="w-4 h-4 text-emerald-400" />
+                        Opciones de Descarga
+                      </h3>
+                      {app.download_options.map((opt: any, idx: number) => {
+                        const isDownloading = downloadingOptionId === opt.url;
+                        return (
+                          <motion.button
+                            key={idx}
+                            type="button"
+                            disabled={isDownloading}
+                            onClick={() => handleOptionDownload(opt.url, opt.title)}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/50 hover:border-emerald-500/30 hover:bg-slate-900/80 transition-all group cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+                          >
+                            {/* Icon */}
+                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/20 group-hover:from-emerald-500/30 group-hover:to-green-500/30 transition-all shrink-0">
+                              {isDownloading ? (
+                                <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
+                              ) : (
+                                <Download className="w-5 h-5 text-emerald-400" />
+                              )}
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 text-left min-w-0">
+                              <p className="text-white font-semibold text-sm truncate">{opt.title}</p>
+                              {opt.version && (
+                                <p className="text-xs text-slate-500 mt-0.5">{opt.version}</p>
+                              )}
+                            </div>
+
+                            {/* Size badge */}
+                            {opt.size && (
+                              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/50 shrink-0">
+                                <HardDrive className="w-3 h-3 text-slate-500" />
+                                <span className="text-xs font-medium text-slate-400">{opt.size}</span>
+                              </div>
+                            )}
+
+                            {/* Arrow */}
+                            <ExternalLink className="w-4 h-4 text-slate-600 group-hover:text-emerald-400 transition-colors shrink-0" />
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    /* Fallback: single download button */
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <button
+                        type="button"
+                        disabled={downloading}
+                        onClick={handleDownload}
+                        className="w-full inline-flex items-center justify-center bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 hover:from-green-600 hover:via-emerald-600 hover:to-green-600 py-4 text-lg font-semibold shadow-2xl shadow-green-500/25 hover:shadow-green-500/40 relative overflow-hidden group rounded-2xl text-white transition-all disabled:opacity-70 disabled:cursor-wait cursor-pointer"
+                      >
+                        <motion.span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0" animate={{ x: ["-100%", "100%"] }} transition={{ duration: 2, repeat: Infinity }} />
+                        {downloading ? (
+                          <><Loader2 className="w-6 h-6 mr-2 animate-spin" /> Procesando...</>
+                        ) : (
+                          <><Download className="w-6 h-6 mr-2" /> Descargar Ahora <ExternalLink className="w-5 h-5 ml-2 opacity-50" /></>
+                        )}
+                      </button>
+                    </motion.div>
+                  )}
+                </>
               )}
             </motion.div>
 

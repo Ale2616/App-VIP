@@ -18,9 +18,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!["admin", "user"].includes(role)) {
+    if (!["admin", "user", "vip", "elite"].includes(role)) {
       return NextResponse.json(
-        { error: "Rol inválido. Usa 'admin' o 'user'" },
+        { error: "Rol inválido. Usa 'admin', 'user', 'vip' o 'elite'" },
         { status: 400 }
       );
     }

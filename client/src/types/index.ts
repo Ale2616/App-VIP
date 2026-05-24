@@ -3,7 +3,7 @@ export interface Profile {
   id: string;
   name: string;
   email: string;
-  role: "user" | "admin";
+  role: "user" | "vip" | "elite" | "admin";
   avatar_url?: string | null;
   created_at: string;
 }
@@ -33,6 +33,7 @@ export interface App {
   file_path: string | null;
   file_size: number;
   category: string;
+  is_premium: boolean;
   download_count: number;
   uploaded_by: string | null;
   created_at: string;

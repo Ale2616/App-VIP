@@ -37,6 +37,7 @@ interface Application {
   icon_url?: string;
   screenshots?: string[];
   download_options?: DownloadOptionItem[];
+  is_premium?: boolean;
   created_at: string;
   updated_at?: string;
 }
@@ -180,10 +181,13 @@ export default function AdminPanel() {
     }
   };
 
+  const ROLE_CYCLE: Record<string, string> = { user: "vip", vip: "elite", elite: "admin", admin: "user" };
+  const ROLE_LABELS: Record<string, string> = { user: "Usuario", vip: "VIP Premium", elite: "VIP Élite", admin: "Administrador" };
+
   const toggleRole = async (userId: string, currentRole: string) => {
-    const newRole = currentRole === "admin" ? "user" : "admin";
-    const action = newRole === "admin" ? "dar permisos de Administrador" : "quitar permisos de Administrador";
-    if (!confirm(`¿Seguro que quieres ${action} a este usuario?`)) return;
+    const newRole = ROLE_CYCLE[currentRole] || "user";
+    const label = ROLE_LABELS[newRole] || newRole;
+    if (!confirm(`¿Cambiar rol de este usuario a "${label}"?`)) return;
     try {
       const res = await fetch("/api/set-role", {
         method: "POST",
@@ -201,7 +205,7 @@ export default function AdminPanel() {
       }
 
       setNotification({
-        msg: `Rol actualizado a ${newRole === "admin" ? "Administrador" : "Usuario"}`,
+        msg: `Rol actualizado a ${label}`,
         type: "success",
       });
       fetchUsers();
@@ -477,8 +481,15 @@ export default function AdminPanel() {
                       <div className="p-4 rounded-2xl bg-slate-800/50"><ImageIcon size={36} className="text-slate-700" /></div>
                     </div>
                   )}
-                  <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider text-purple-300 border border-purple-500/20 uppercase">
-                    {app.category}
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                    <span className="bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider text-purple-300 border border-purple-500/20 uppercase">
+                      {app.category}
+                    </span>
+                    {app.is_premium && (
+                      <span className="bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-1 rounded-full text-[10px] font-bold text-white flex items-center gap-1 shadow-lg">
+                        <Crown size={10} /> VIP
+                      </span>
+                    )}
                   </div>
                   <div className="absolute bottom-3 right-3 bg-gradient-to-r from-purple-500 to-fuchsia-600 px-2.5 py-0.5 rounded-md text-[11px] font-bold text-white shadow-lg">
                     v{app.version}
@@ -534,17 +545,25 @@ export default function AdminPanel() {
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg shrink-0 ${
                       user.role === "admin"
                         ? "bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/20"
-                        : "bg-gradient-to-br from-purple-500 to-fuchsia-500 shadow-purple-500/20"
+                        : user.role === "elite"
+                        ? "bg-gradient-to-br from-orange-500 to-red-500 shadow-orange-500/20"
+                        : user.role === "vip"
+                        ? "bg-gradient-to-br from-purple-500 to-fuchsia-500 shadow-purple-500/20"
+                        : "bg-gradient-to-br from-slate-500 to-slate-600 shadow-slate-500/20"
                     }`}>
-                      {user.role === "admin" ? <Crown className="w-4 h-4 text-white" /> : <Users className="w-4 h-4 text-white" />}
+                      {user.role === "admin" ? <Crown className="w-4 h-4 text-white" /> : user.role === "elite" ? <Sparkles className="w-4 h-4 text-white" /> : user.role === "vip" ? <Crown className="w-4 h-4 text-white" /> : <Users className="w-4 h-4 text-white" />}
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold text-white truncate">{user.name || "Sin nombre"}</p>
-                        {user.role === "admin" && (
-                          <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">Admin</span>
+                        {user.role !== "user" && (
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                            user.role === "admin" ? "text-amber-400 bg-amber-500/10 border border-amber-500/20"
+                            : user.role === "elite" ? "text-orange-400 bg-orange-500/10 border border-orange-500/20"
+                            : "text-purple-400 bg-purple-500/10 border border-purple-500/20"
+                          }`}>{user.role === "admin" ? "Admin" : user.role === "elite" ? "Élite" : "VIP"}</span>
                         )}
                       </div>
                       <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5 truncate">
@@ -555,14 +574,10 @@ export default function AdminPanel() {
                     {/* Botón toggle rol */}
                     <button
                       onClick={() => toggleRole(user.id, user.role)}
-                      className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                        user.role === "admin"
-                          ? "bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20"
-                          : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20"
-                      }`}
+                      className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20"
                     >
                       <Shield className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">{user.role === "admin" ? "Quitar Admin" : "Dar Admin"}</span>
+                      <span className="hidden sm:inline">&rarr; {ROLE_LABELS[ROLE_CYCLE[user.role] || "user"]}</span>
                     </button>
                   </div>
                 ))}
@@ -605,6 +620,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
     category: app?.category || "Aplicaciones",
     download_url: app?.download_url || "",
     image_url: app?.image_url || "",
+    is_premium: app?.is_premium || false,
   });
 
   // ── Scraper / Autocompletar ──
@@ -816,6 +832,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
         icon_url: finalIconUrl,
         screenshots: finalScreenshots,
         download_options: cleanedDownloadOptions,
+        is_premium: formData.is_premium,
       };
 
       console.log("📝 Payload final a BD:", payload);
@@ -947,6 +964,31 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                 </div>
               </div>
 
+              {/* ── Toggle Solo VIP ── */}
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-amber-500/5 to-orange-500/5 border border-amber-500/20">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500">
+                    <Crown size={14} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Solo para VIPs</p>
+                    <p className="text-[11px] text-slate-500">Requiere membresía VIP para descargar</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, is_premium: !formData.is_premium })}
+                  className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                    formData.is_premium
+                      ? "bg-gradient-to-r from-amber-500 to-orange-500 shadow-lg shadow-amber-500/30"
+                      : "bg-slate-700"
+                  }`}
+                >
+                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${
+                    formData.is_premium ? "left-[26px]" : "left-0.5"
+                  }`} />
+                </button>
+              </div>
               <div>
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">URL de Descarga</label>
                 <input required type="url" placeholder="https://ejemplo.com/descarga"
