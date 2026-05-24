@@ -355,7 +355,7 @@ export default function AdminPanel() {
               <div className="flex items-center gap-3">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/png, image/jpeg, image/webp"
                   onChange={handleLogoUpload}
                   disabled={uploadingLogo}
                   className="w-full min-w-0 text-sm text-slate-300 bg-slate-900/80 border border-slate-700/50 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-black file:cursor-pointer hover:file:bg-amber-400 transition-all"
@@ -956,7 +956,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                     <div className="relative aspect-video rounded-lg border-2 border-dashed border-slate-700 hover:border-purple-500/40 flex flex-col items-center justify-center cursor-pointer overflow-hidden">
                       <Plus className="text-slate-500 mb-1" size={20} />
                       <span className="text-[10px] text-slate-500 font-medium">Añadir</span>
-                      <input type="file" accept="image/*" multiple onChange={handleScreenshotChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                      <input type="file" accept="image/png, image/jpeg, image/webp" multiple onChange={handleScreenshotChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                     </div>
                   </div>
                 </div>
@@ -976,7 +976,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                       <p className="text-xs font-medium">Clic para cargar imagen</p>
                     </div>
                   )}
-                  <input type="file" accept="image/*"
+                  <input type="file" accept="image/png, image/jpeg, image/webp"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
                     onChange={handleFileChange} />
                   <div className="absolute inset-0 bg-gradient-to-t from-purple-600/40 to-fuchsia-600/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm z-20 pointer-events-none">

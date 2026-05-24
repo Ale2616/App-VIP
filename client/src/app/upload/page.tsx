@@ -284,18 +284,18 @@ function UploadContent() {
                       Imagen / Captura de pantalla
                     </Label>
                     <div
-                      onClick={() => imageInputRef.current?.click()}
-                      className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all duration-200 ${imagePreview
+                      className={`relative border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all duration-200 ${imagePreview
                           ? "border-emerald-500/50 bg-emerald-500/5"
                           : "border-slate-700 hover:border-slate-600 bg-slate-950/50"
                         }`}
                     >
+                      {/* Input nativo visible como overlay — NO usar hidden ni programmatic .click() para garantizar el Bottom Sheet nativo en Android/iOS */}
                       <input
                         ref={imageInputRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/png, image/jpeg, image/webp"
                         onChange={handleImageSelect}
-                        className="hidden"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
                       />
                       {imagePreview ? (
                         <div className="relative">
@@ -310,7 +310,7 @@ function UploadContent() {
                               e.stopPropagation();
                               clearImage();
                             }}
-                            className="absolute top-2 right-2 p-1.5 bg-red-500/90 rounded-full text-white hover:bg-red-600 transition-colors shadow-lg"
+                            className="absolute top-2 right-2 p-1.5 bg-red-500/90 rounded-full text-white hover:bg-red-600 transition-colors shadow-lg z-40"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -320,7 +320,7 @@ function UploadContent() {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center gap-2 py-4">
+                        <div className="flex flex-col items-center gap-2 py-4 pointer-events-none">
                           <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700">
                             <ImagePlus className="w-8 h-8 text-slate-500" />
                           </div>
