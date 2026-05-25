@@ -19,7 +19,7 @@ import {
   Monitor,
 } from "lucide-react";
 
-const WHATSAPP_NUMBER = "50766688696"; // <-- Cambia a tu número real
+const WHATSAPP_NUMBER = "573115397930";
 
 const plans = [
   {
