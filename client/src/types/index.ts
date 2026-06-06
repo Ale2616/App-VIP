@@ -31,10 +31,12 @@ export interface App {
   download_url: string | null;
   download_options?: DownloadOption[] | null;
   file_path: string | null;
-  file_size: number;
+  file_size: string | null;
   category: string;
   is_premium: boolean;
   download_count: number;
+  score?: string | null;
+  installs?: string | null;
   uploaded_by: string | null;
   created_at: string;
   updated_at: string;

@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "play-lh.googleusercontent.com",
+        hostname: "*.googleusercontent.com",
         pathname: "/**",
       },
     ],

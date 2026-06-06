@@ -1,399 +1,345 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useAuthStore } from "@/store/auth-store";
+import { useState } from "react";
 import { useApps } from "@/hooks/use-apps";
-import { useLogActivity } from "@/hooks/use-visits";
 import { useSiteSettings } from "@/hooks/use-site-settings";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
+import Header from "@/components/Header";
+import AppCard, { AppCardSkeleton } from "@/components/AppCard";
 import {
-  Download, Crown, LogOut, User, TrendingUp, Gamepad2, AppWindow,
-  Bot, Search, X, Star, Zap, Shield, Globe, ChevronRight, Rocket,
-  Sparkles, Upload, Mail, Calendar, MessageSquare, Send, Monitor,
+  Sparkles,
+  TrendingUp,
+  Clock,
+  Gamepad2,
+  AppWindow,
+  Search,
+  ArrowRight,
+  Crown,
 } from "lucide-react";
-import { toast } from "sonner";
-import type { App } from "@/types";
-
-type CategoryFilter = "all" | "Aplicaciones" | "Juegos" | "Juegos PC" | "Software PC" | "popular" | "most-downloaded";
-
-const categories = [
-  { id: "all" as const, label: "Todos", icon: Bot, color: "from-purple-500 to-fuchsia-500" },
-  { id: "Aplicaciones" as const, label: "Aplicaciones", icon: AppWindow, color: "from-green-500 to-emerald-500" },
-  { id: "Juegos" as const, label: "Juegos", icon: Gamepad2, color: "from-blue-500 to-cyan-500" },
-  { id: "Juegos PC" as const, label: "Juegos PC", icon: Monitor, color: "from-indigo-500 to-violet-500" },
-  { id: "Software PC" as const, label: "Software PC", icon: Monitor, color: "from-teal-500 to-emerald-500" },
-  { id: "popular" as const, label: "Populares", icon: TrendingUp, color: "from-amber-500 to-orange-500" },
-  { id: "most-downloaded" as const, label: "Descargados", icon: Download, color: "from-pink-500 to-rose-500" },
-];
-
-function FloatingParticles() {
-  return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      {Array.from({ length: 20 }, (_, i) => (
-        <motion.div key={i} className="absolute w-1 h-1 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 rounded-full"
-          style={{ left: `${(i * 37 + 13) % 100}%`, top: `${(i * 53 + 7) % 100}%` }}
-          animate={{ y: [0, -100, 0], opacity: [0, .8, 0], scale: [0, 1.5, 0] }}
-          transition={{ duration: 5 + (i % 5), repeat: Infinity, delay: i * .2, ease: "easeInOut" }} />
-      ))}
-    </div>
-  );
-}
-
-function GradientOrbs() {
-  return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      <motion.div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-purple-500/30 to-fuchsia-500/30 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 15, repeat: Infinity }} />
-      <motion.div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-gradient-to-tr from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl" animate={{ scale: [1.2, 1, 1.2] }} transition={{ duration: 18, repeat: Infinity }} />
-    </div>
-  );
-}
-
-function AppCard({ app, index }: { app: App; index: number }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * .05 }} className="group">
-      <Link href={`/apps/${app.id}`} className="block">
-        <Card className="bg-slate-900/60 backdrop-blur-xl border-slate-800/50 hover:border-purple-500/30 transition-all duration-300 overflow-hidden hover:shadow-2xl hover:shadow-purple-500/10 cursor-pointer">
-          <CardContent className="p-5">
-            <div className="flex items-start gap-4">
-              <div className="shrink-0">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
-                  {(app.icon_url || app.image_url) ? (
-                    <img src={app.icon_url || app.image_url!} alt={app.name} className="w-16 h-16 rounded-2xl object-cover relative z-10 shadow-lg" />
-                  ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center relative z-10 shadow-lg"><Package className="w-8 h-8 text-slate-600" /></div>
-                  )}
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold text-white group-hover:text-purple-400 transition-colors truncate">
-                  {app.name}<ChevronRight className="inline-block w-4 h-4 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </h3>
-                <p className="text-sm text-slate-400 line-clamp-2 mt-1 group-hover:text-slate-300 transition-colors">{app.description}</p>
-                <div className="flex items-center gap-3 mt-2.5">
-                  <Badge variant="secondary" className="text-xs bg-slate-800/50 border-slate-700">{app.category}</Badge>
-                  {app.version && <span className="text-xs text-slate-500">v{app.version}</span>}
-                  <span className="text-xs text-slate-500 flex items-center gap-1">
-                    <Download className="w-3 h-3" />{(app.download_count ?? 0).toLocaleString("es-ES")}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
-    </motion.div>
-  );
-}
-
-function Package({ className }: { className?: string }) {
-  return <AppWindow className={className} />;
-}
-
-function AppCardSkeleton() {
-  return (
-    <Card className="bg-slate-900/60 backdrop-blur-xl border-slate-800/50"><CardContent className="p-5"><div className="flex items-start gap-4"><Skeleton className="w-16 h-16 rounded-2xl" /><div className="flex-1 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-1/2" /></div><Skeleton className="h-10 w-28 rounded-lg" /></div></CardContent></Card>
-  );
-}
-
-function HeroSection({ totalApps, totalDownloads }: { totalApps: number; totalDownloads: number }) {
-  const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 500], [0, 200]);
-  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
-  return (
-    <motion.div style={{ y, opacity }} className="relative py-16 md:py-24">
-      <div className="container mx-auto px-4 text-center">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8 }}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 mb-6">
-            <Sparkles className="w-4 h-4 text-purple-400" /><span className="text-sm text-purple-300">El mejor catálogo de aplicaciones</span>
-          </div>
-        </motion.div>
-        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .1 }} className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6">
-          <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">Descubre las Mejores</span><br />
-          <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">Apps y Juegos</span>
-        </motion.h1>
-        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .2 }} className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10">
-          Explora nuestro catálogo premium con las aplicaciones más populares y seguras
-        </motion.p>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .3 }} className="flex flex-wrap justify-center gap-4 mb-12">
-          <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900/50 border border-slate-800">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-fuchsia-500"><AppWindow className="w-5 h-5 text-white" /></div>
-            <div><p className="text-2xl font-bold text-white">{totalApps}</p><p className="text-xs text-slate-500">Aplicaciones</p></div>
-          </div>
-          <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900/50 border border-slate-800">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500"><Download className="w-5 h-5 text-white" /></div>
-            <div><p className="text-2xl font-bold text-white">{(totalDownloads ?? 0).toLocaleString("es-ES")}</p><p className="text-xs text-slate-500">Descargas</p></div>
-          </div>
-          <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900/50 border border-slate-800">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500"><Shield className="w-5 h-5 text-white" /></div>
-            <div><p className="text-2xl font-bold text-white">100%</p><p className="text-xs text-slate-500">Seguro</p></div>
-          </div>
-        </motion.div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .8, delay: .4 }} className="flex flex-wrap justify-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-slate-400"><Zap className="w-4 h-4 text-yellow-400" /><span>Descargas rápidas</span></div>
-          <div className="flex items-center gap-2 text-sm text-slate-400"><Star className="w-4 h-4 text-amber-400" /><span>Apps verificadas</span></div>
-          <div className="flex items-center gap-2 text-sm text-slate-400"><Globe className="w-4 h-4 text-blue-400" /><span>Actualizado 24/7</span></div>
-        </motion.div>
-      </div>
-    </motion.div>
-  );
-}
-
-function Footer({ logoUrl }: { logoUrl?: string | null }) {
-  return (
-    <footer className="border-t border-slate-800/50 bg-slate-950/50 backdrop-blur-xl mt-20">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              {logoUrl ? (
-                <img src={logoUrl} alt="App VIP" className="w-10 h-10 rounded-lg object-contain" />
-              ) : (
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white flex items-center justify-center rounded-lg font-bold text-xs shadow-lg">VIP</div>
-              )}
-              <span className="text-xl font-bold text-white">App VIP</span>
-            </div>
-            <p className="text-slate-400 text-sm">Tu destino premium para descubrir y descargar las mejores aplicaciones y juegos.</p>
-          </div>
-          <div>
-            <h4 className="text-white font-semibold mb-4">Enlaces Rápidos</h4>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li><Link href="/" className="hover:text-purple-400 transition-colors">Inicio</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-semibold mb-4">Contacto</h4>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <a href="https://wa.me/573115397930" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-green-400 transition-colors">
-                  <div className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <MessageSquare className="w-4 h-4 text-green-400" />
-                  </div>
-                  WhatsApp
-                </a>
-              </li>
-              <li>
-                <a href="https://t.me/Alejandro19200" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors">
-                  <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                    <Send className="w-4 h-4 text-blue-400" />
-                  </div>
-                  Telegram
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-semibold mb-4">Características</h4>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li className="flex items-center gap-2"><Rocket className="w-4 h-4 text-purple-400" /><span>Descargas directas</span></li>
-              <li className="flex items-center gap-2"><Shield className="w-4 h-4 text-green-400" /><span>Apps verificadas</span></li>
-              <li className="flex items-center gap-2"><Zap className="w-4 h-4 text-yellow-400" /><span>Actualizaciones constantes</span></li>
-            </ul>
-          </div>
-        </div>
-        <div className="border-t border-slate-800/50 pt-8 text-center">
-          <p className="text-sm text-slate-500">© {new Date().getFullYear()} App VIP. Todos los derechos reservados.</p>
-        </div>
-      </div>
-    </footer>
-  );
-}
+import Link from "next/link";
 
 export default function HomePage() {
-  const { isAuthenticated, isAdmin, logout, profile } = useAuthStore();
-  const [activeCategory, setActiveCategory] = useState<CategoryFilter>("all");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showHero, setShowHero] = useState(true);
-  const [showProfile, setShowProfile] = useState(false);
 
-  const isSpecial = activeCategory === "all" || activeCategory === "popular" || activeCategory === "most-downloaded";
-  const category = isSpecial ? undefined : activeCategory;
-  const mostDownloaded = activeCategory === "most-downloaded" || activeCategory === "popular";
-
-  const { data, isLoading } = useApps(category, mostDownloaded);
-  const logActivity = useLogActivity();
+  // Sincronizamos todo el catálogo localmente para evitar discrepancias de mayúsculas/minúsculas o plurales en la base de datos
+  const { data, isLoading } = useApps(undefined, false);
   const { logoUrl } = useSiteSettings();
 
-  const filteredApps = data?.apps?.filter((app) =>
-    app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.description.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const allApps = data?.apps || [];
 
-  const totalDownloads = data?.apps?.reduce((sum, app) => sum + (app.download_count ?? 0), 0) || 0;
+  // Función flexible y normalizada para comprobar la categoría
+  const matchesCategory = (appCategory: string, isPremiumApp?: boolean, targetCat?: string) => {
+    const appCat = (appCategory || "").toLowerCase().trim();
+    const activeCat = (targetCat || "").toLowerCase().trim();
 
-  const handleCategoryChange = useCallback((catId: CategoryFilter) => {
-    setActiveCategory(catId);
-    if (catId !== "all" && catId !== "popular" && catId !== "most-downloaded") setSearchTerm("");
-  }, []);
+    if (activeCat === "all" || activeCat === "todos" || !activeCat) {
+      return true;
+    }
+    if (activeCat === "vip") {
+      return isPremiumApp === true || appCat.includes("vip");
+    }
+    if (activeCat === "juegos" || activeCat === "juego" || activeCat === "game") {
+      return ["juego", "juegos", "game"].includes(appCat);
+    }
+    if (activeCat === "aplicaciones" || activeCat === "apps" || activeCat === "app") {
+      return ["app", "apps", "aplicación", "aplicacion", "aplicaciones"].includes(appCat);
+    }
+    if (activeCat === "juegos pc" || activeCat === "pc") {
+      return (
+        appCat === "juego pc" ||
+        appCat === "juegos pc" ||
+        (appCat.includes("juego") && appCat.includes("pc"))
+      ) && !appCat.includes("software");
+    }
+    if (activeCat === "software pc" || activeCat === "software") {
+      return (
+        appCat.includes("software") ||
+        appCat.includes("programas")
+      );
+    }
+    
+    // Fallback a coincidencia exacta normalizada
+    return appCat === activeCat;
+  };
+
+  // 1. Filtrar por búsqueda y por categoría activa
+  let filteredApps = allApps.filter((app) => {
+    const categoryMatch = matchesCategory(app.category, app.is_premium, activeCategory);
+    
+    let searchMatch = true;
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      searchMatch =
+        app.name.toLowerCase().includes(searchLower) ||
+        app.description.toLowerCase().includes(searchLower);
+    }
+    
+    return categoryMatch && searchMatch;
+  });
+
+  // ── Filtrados en memoria para los estantes (Secciones) ──
+  
+  // Destacados (Hero): Top 4 más populares (por descargas)
+  const featuredApps = [...allApps]
+    .sort((a, b) => (b.download_count ?? 0) - (a.download_count ?? 0))
+    .slice(0, 4);
+
+  // Actualizaciones Recientes: Ordenados por fecha de creación desc (más recientes primero)
+  const recentApps = [...allApps]
+    .sort(
+      (a, b) =>
+        new Date(b.created_at || 0).getTime() -
+        new Date(a.created_at || 0).getTime()
+    )
+    .slice(0, 8);
+
+  // Más Populares / Recomendados: Siguiente lote de más populares
+  const popularApps = [...allApps]
+    .sort((a, b) => (b.download_count ?? 0) - (a.download_count ?? 0))
+    .slice(4, 12);
+
+  // Juegos Populares: Juegos de Android o PC
+  const popularGames = allApps
+    .filter((app) => {
+      const appCat = (app.category || "").toLowerCase().trim();
+      return ["juego", "juegos", "game", "juegos pc"].includes(appCat);
+    })
+    .sort((a, b) => (b.download_count ?? 0) - (a.download_count ?? 0))
+    .slice(0, 8);
+
+  // Apps Populares: Aplicaciones o Software
+  const popularSoftwares = allApps
+    .filter((app) => {
+      const appCat = (app.category || "").toLowerCase().trim();
+      return ["app", "apps", "aplicación", "aplicacion", "aplicaciones", "pc", "software", "software pc"].includes(appCat);
+    })
+    .sort((a, b) => (b.download_count ?? 0) - (a.download_count ?? 0))
+    .slice(0, 8);
+
+  // Determinar si debemos mostrar la vista normal filtrada o el dashboard temático
+  const showDashboard = activeCategory === "all" && !searchTerm;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black via-slate-950 to-slate-900 relative overflow-x-hidden">
-      <FloatingParticles />
-      <GradientOrbs />
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 transition-colors duration-200">
+      
+      {/* ── Header responsivo ── */}
+      <Header
+        currentCategory={activeCategory}
+        setCategory={setActiveCategory}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+      />
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            {logoUrl ? (
-              <img src={logoUrl} alt="App VIP" className="w-10 h-10 rounded-xl object-contain shadow-lg" />
-            ) : (
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white flex items-center justify-center rounded-xl font-bold text-xs shadow-lg shadow-purple-500/20">VIP</div>
-            )}
-            <span className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">App VIP</span>
-          </Link>
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Panel Pro — solo activo para administradores */}
-            {isAuthenticated && isAdmin ? (
-              <Link href="/admin-panel">
-                <Button
-                  size="sm"
-                  className="bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-semibold shadow-lg shadow-amber-500/20 px-2.5 sm:px-4"
-                >
-                  <Crown className="w-4 h-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Panel Pro</span>
-                </Button>
-              </Link>
-            ) : (
-              <Button
-                size="sm"
-                disabled
-                className="bg-gradient-to-r from-amber-500/40 to-yellow-600/40 text-black/50 font-semibold px-2.5 sm:px-4 opacity-50 cursor-not-allowed pointer-events-none select-none"
-                aria-disabled="true"
-                title="Solo disponible para administradores"
-              >
-                <Crown className="w-4 h-4 sm:mr-1" />
-                <span className="hidden sm:inline">Panel Pro</span>
-              </Button>
-            )}
-
-            {isAuthenticated ? (
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <button
-                    onClick={() => setShowProfile(!showProfile)}
-                    className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-900/50 border border-slate-800 hover:border-purple-500/30 hover:bg-slate-800/50 transition-all cursor-pointer"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center"><User className="w-3 h-3 text-white" /></div>
-                    <span className="hidden sm:inline text-sm text-slate-300">{profile?.name}</span>
-                  </button>
-
-                  {showProfile && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)} />
-                      <div className="absolute right-0 top-full mt-2 w-72 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-purple-900/20 z-50 overflow-hidden">
-                        {/* Header del perfil */}
-                        <div className="p-5 bg-gradient-to-br from-purple-500/10 to-fuchsia-500/10 border-b border-slate-800/50">
-                          <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                              <User className="w-5 h-5 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-white truncate">{profile?.name}</p>
-                              <p className="text-xs text-purple-300 font-medium">{profile?.role === 'admin' ? '👑 Administrador' : '👤 Usuario'}</p>
-                            </div>
-                          </div>
-                        </div>
-                        {/* Datos del perfil */}
-                        <div className="p-4 space-y-3">
-                          <div className="flex items-center gap-3 text-sm">
-                            <div className="p-1.5 rounded-lg bg-slate-800/50"><Mail className="w-3.5 h-3.5 text-purple-400" /></div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Correo</p>
-                              <p className="text-slate-300 text-xs truncate">{profile?.email || 'No disponible'}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 text-sm">
-                            <div className="p-1.5 rounded-lg bg-slate-800/50"><Shield className="w-3.5 h-3.5 text-emerald-400" /></div>
-                            <div>
-                              <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Rol</p>
-                              <p className="text-slate-300 text-xs">{profile?.role === 'admin' ? 'Administrador' : 'Usuario'}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 text-sm">
-                            <div className="p-1.5 rounded-lg bg-slate-800/50"><Calendar className="w-3.5 h-3.5 text-amber-400" /></div>
-                            <div>
-                              <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Miembro desde</p>
-                              <p className="text-slate-300 text-xs">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' }) : 'Reciente'}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <Button variant="destructive" size="sm" onClick={() => { logout(); toast.info("Sesión cerrada"); }} className="bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-600/30 px-2.5">
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link href="/login"><Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-800">Entrar</Button></Link>
-                <Link href="/register"><Button size="sm" className="bg-gradient-to-r from-purple-500 to-fuchsia-600 shadow-lg shadow-purple-500/20">Registrarse</Button></Link>
-              </div>
-            )}
+      <main className="flex-1 container mx-auto px-4 py-8 space-y-12">
+        {isLoading ? (
+          /* Estado de Carga */
+          <div className="space-y-8">
+            <div className="h-6 w-48 bg-gray-200 dark:bg-slate-800 rounded animate-pulse" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <AppCardSkeleton key={i} />
+              ))}
+            </div>
           </div>
-        </div>
-      </header>
+        ) : showDashboard ? (
+          /* ════════════════════════════════════════════════════════════
+             VISTA 1: DASHBOARD TEMÁTICO (Estilo Netflix / adescargar.net)
+             ════════════════════════════════════════════════════════════ */
+          <>
+            {/* 1. Sección ⭐ Destacados (Hero) */}
+            {featuredApps.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 mb-6">
+                  <Sparkles className="w-5 h-5 text-indigo-650 dark:text-indigo-400" />
+                  <h2 className="text-xl font-extrabold tracking-tight">Destacados</h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {featuredApps.map((app) => {
+                    const isMod =
+                      app.name.toLowerCase().includes("mod") ||
+                      app.description.toLowerCase().includes("mod");
+                    return (
+                      <Link href={`/apps/${app.id}`} key={app.id} className="group">
+                        <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-5 shadow-sm hover:shadow-xl border border-gray-200/60 dark:border-slate-700/50 transition-all duration-300 flex items-start gap-4 h-full">
+                          <span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 shadow-sm animate-pulse">
+                            🔥 POPULAR
+                          </span>
 
-      {showHero && activeCategory === "all" && !searchTerm && (
-        <HeroSection totalApps={data?.apps.length || 0} totalDownloads={totalDownloads} />
-      )}
+                          <div className="w-16 h-16 shrink-0 relative">
+                            {app.icon_url || app.image_url ? (
+                              <img
+                                src={app.icon_url || app.image_url!}
+                                alt={app.name}
+                                className="w-full h-full aspect-square object-cover rounded-xl shadow-sm group-hover:scale-105 transition-transform duration-300"
+                              />
+                            ) : (
+                              <div className="w-full h-full rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center shadow-sm">
+                                <span className="text-xs font-bold text-gray-400">VIP</span>
+                              </div>
+                            )}
+                          </div>
 
-      {/* Search */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="relative max-w-2xl mx-auto">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-          <input type="text" value={searchTerm} onChange={e => { setSearchTerm(e.target.value); if (e.target.value) setShowHero(false) }} placeholder="Buscar aplicaciones o juegos..."
-            className="w-full h-14 pl-12 pr-10 rounded-2xl bg-slate-900/80 border border-slate-700/50 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all text-base shadow-xl shadow-purple-500/5" />
-          {searchTerm && (
-            <button onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors p-1 hover:bg-slate-800 rounded-full"><X className="w-5 h-5" /></button>
-          )}
-        </div>
-      </div>
+                          <div className="flex-1 min-w-0 pr-12">
+                            <h3 className="font-extrabold text-sm text-gray-900 dark:text-white truncate leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                              {app.name}
+                            </h3>
+                            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 line-clamp-2">
+                              {app.description}
+                            </p>
+                            
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300">
+                                {app.category}
+                              </span>
+                              {isMod && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
+                                  MOD
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
-      {/* Categories */}
-      <div className="container mx-auto px-4 pb-8">
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {categories.map((cat, index) => {
-            const Icon = cat.icon;
-            const isActive = activeCategory === cat.id;
-            return (
-              <button key={cat.id} onClick={() => handleCategoryChange(cat.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 ${isActive ? `bg-gradient-to-r ${cat.color} text-white shadow-lg shadow-purple-500/25` : "bg-slate-900/50 text-slate-400 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/50"}`}>
-                <Icon className="w-4 h-4" /><span className="text-sm font-medium">{cat.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+            {/* 2. Sección 🔄 Actualizaciones Recientes */}
+            {recentApps.length > 0 && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-indigo-650 dark:text-indigo-400" />
+                    <h2 className="text-xl font-extrabold tracking-tight">Actualizaciones Recientes</h2>
+                  </div>
+                  <button
+                    onClick={() => setActiveCategory("Aplicaciones")}
+                    className="text-xs font-bold text-indigo-650 dark:text-indigo-400 hover:text-indigo-500 flex items-center gap-1 cursor-pointer"
+                  >
+                    Ver todas <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {/* Carrusel Horizontal */}
+                <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide">
+                  {recentApps.map((app) => (
+                    <div key={app.id} className="w-40 sm:w-48 shrink-0 snap-start">
+                      <AppCard app={app} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-      {/* Apps */}
-      <div className="container mx-auto px-4 pb-20">
-        <div className="space-y-4">
-          {isLoading ? (
-            Array.from({ length: 5 }).map((_, i) => <AppCardSkeleton key={i} />)
-          ) : filteredApps.length > 0 ? (
-            <>
-              {searchTerm && <p className="text-sm text-slate-400">{filteredApps.length} resultado{filteredApps.length !== 1 ? "s" : ""} para &ldquo;{searchTerm}&rdquo;</p>}
-              {filteredApps.map((app, index) => <AppCard key={app.id} app={app} index={index} />)}
-            </>
-          ) : (
-            <motion.div className="text-center py-20" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-900/50 border border-slate-800 flex items-center justify-center"><Search className="w-10 h-10 text-slate-700" /></div>
-              <p className="text-slate-400 text-lg mb-2">{searchTerm ? `No se encontraron resultados para "${searchTerm}"` : "No se encontraron aplicaciones"}</p>
-              <p className="text-slate-600 text-sm">{searchTerm ? "Intenta con otro término de búsqueda" : "Vuelve pronto para nuevas apps"}</p>
-            </motion.div>
-          )}
-        </div>
-      </div>
+            {/* 3. Sección 📈 Recomendaciones / Más Populares */}
+            {popularApps.length > 0 && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-indigo-650 dark:text-indigo-400" />
+                    <h2 className="text-xl font-extrabold tracking-tight">Recomendaciones para ti</h2>
+                  </div>
+                </div>
+                {/* Carrusel Horizontal */}
+                <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide">
+                  {popularApps.map((app) => (
+                    <div key={app.id} className="w-40 sm:w-48 shrink-0 snap-start">
+                      <AppCard app={app} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-      <Footer logoUrl={logoUrl} />
-    </main>
+            {/* 4. Sección 🎮 Juegos Populares */}
+            {popularGames.length > 0 && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Gamepad2 className="w-5 h-5 text-indigo-650 dark:text-indigo-400" />
+                    <h2 className="text-xl font-extrabold tracking-tight">Juegos Populares</h2>
+                  </div>
+                  <button
+                    onClick={() => setActiveCategory("Juegos")}
+                    className="text-xs font-bold text-indigo-650 dark:text-indigo-400 hover:text-indigo-500 flex items-center gap-1 cursor-pointer"
+                  >
+                    Ver todos <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {/* Carrusel Horizontal */}
+                <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide">
+                  {popularGames.map((app) => (
+                    <div key={app.id} className="w-40 sm:w-48 shrink-0 snap-start">
+                      <AppCard app={app} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* 5. Sección 📱 Apps Populares */}
+            {popularSoftwares.length > 0 && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AppWindow className="w-5 h-5 text-indigo-650 dark:text-indigo-400" />
+                    <h2 className="text-xl font-extrabold tracking-tight">Aplicaciones Populares</h2>
+                  </div>
+                  <button
+                    onClick={() => setActiveCategory("Aplicaciones")}
+                    className="text-xs font-bold text-indigo-650 dark:text-indigo-400 hover:text-indigo-500 flex items-center gap-1 cursor-pointer"
+                  >
+                    Ver todas <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {/* Carrusel Horizontal */}
+                <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide">
+                  {popularSoftwares.map((app) => (
+                    <div key={app.id} className="w-40 sm:w-48 shrink-0 snap-start">
+                      <AppCard app={app} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
+        ) : (
+          /* ════════════════════════════════════════════════════════════
+             VISTA 2: LISTADO EN CUADRÍCULA (Búsqueda o Categoría activa)
+             ════════════════════════════════════════════════════════════ */
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
+                {searchTerm ? (
+                  <Search className="w-5 h-5 text-indigo-605 dark:text-indigo-400" />
+                ) : (
+                  <Sparkles className="w-5 h-5 text-indigo-605 dark:text-indigo-400" />
+                )}
+                {searchTerm ? `Resultados de "${searchTerm}"` : activeCategory === "VIP" ? "Membresías VIP" : activeCategory}
+              </h2>
+              <span className="text-xs text-gray-500 dark:text-slate-400 font-bold">
+                {filteredApps.length} disponible{filteredApps.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+
+            {filteredApps.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
+                {filteredApps.map((app) => (
+                  <AppCard key={app.id} app={app} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white dark:bg-slate-800/40 rounded-2xl border border-gray-200/50 dark:border-slate-800/60">
+                <p className="text-gray-900 dark:text-white font-extrabold">No hay aplicaciones disponibles</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  Intenta restablecer la búsqueda o seleccionar otra categoría.
+                </p>
+              </div>
+            )}
+          </section>
+        )}
+      </main>
+    </div>
   );
 }
