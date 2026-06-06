@@ -36,7 +36,7 @@ export function useCreateApp() {
       image_url?: string;
       download_url?: string;
       file_path?: string;
-      file_size?: number;
+      file_size?: string | null;
       category: string;
       uploaded_by?: string;
     }) => appsApi.create(appData),

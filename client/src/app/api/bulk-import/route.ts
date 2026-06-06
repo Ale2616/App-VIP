@@ -2,26 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import gplay from "google-play-scraper";
 
-function parseSizeToBytes(sizeStr?: string | null): number {
-  if (!sizeStr) return 0;
-  const cleanStr = sizeStr.replace(/,/g, "").trim().toLowerCase();
-  const num = parseFloat(cleanStr);
-  if (isNaN(num)) return 0;
-  if (cleanStr.endsWith("gb") || cleanStr.endsWith("g")) {
-    return Math.round(num * 1024 * 1024 * 1024);
-  }
-  if (cleanStr.endsWith("mb") || cleanStr.endsWith("m")) {
-    return Math.round(num * 1024 * 1024);
-  }
-  if (cleanStr.endsWith("kb") || cleanStr.endsWith("k")) {
-    return Math.round(num * 1024);
-  }
-  return Math.round(num);
-}
-
 export async function POST(request: Request) {
   try {
-    // Inicialización segura de Supabase dentro del handler para capturar errores de configuración
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wzeklbcmloxxvzqtxocq.supabase.co";
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_publishable_Irc_VuEUm_TMrVfB9dgf3g_UxAyGRVG";
 
@@ -41,7 +23,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Limitar tamaño de lote para evitar timeouts
     if (appIds.length > 25) {
       return NextResponse.json(
         { error: "El lote no puede superar los 25 appIds por petición" },
@@ -49,16 +30,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const importedApps = [];
-    const errors = [];
+    const importedApps: any[] = [];
+    const errors: any[] = [];
     let duplicatedCount = 0;
 
     for (const appId of appIds) {
       try {
-        // Extraer metadatos de Google Play Scraper
-        const data = await gplay.app({ appId, lang: "es", country: "us" });
+        const data: any = await gplay.app({ appId, lang: "es", country: "us" });
 
-        // Lógica de Deduplicación: buscar si ya existe en la base de datos por nombre
+        // Deduplicación
         const { data: existing } = await supabaseAdmin
           .from("applications")
           .select("id")
@@ -72,68 +52,43 @@ export async function POST(request: Request) {
           continue;
         }
 
-        // Determinar categoría (Juegos vs Aplicaciones)
-        const genreId = data.genreId ? data.genreId.toLowerCase() : "";
+        // Categoría
+        const genreId = String(data.genreId ?? "").toLowerCase();
         const isGame =
           genreId.includes("game") ||
-          data.genre === "Games" ||
-          data.genre?.toLowerCase().includes("action") ||
-          data.genre?.toLowerCase().includes("casual");
+          String(data.genre ?? "") === "Games" ||
+          String(data.genre ?? "").toLowerCase().includes("action") ||
+          String(data.genre ?? "").toLowerCase().includes("casual");
         const category = isGame ? "Juegos" : "Aplicaciones";
 
-        // Normalización de datos
-        const dataAny = data as any; // Usamos 'any' para evitar que TypeScript se bloquee
-        const rawSize = dataAny.size || dataAny.appSize || "Variable";
-        const rawVersion = dataAny.version || "Última Versión";
+        // === NORMALIZACIÓN AGRESIVA A STRING ===
+        const rawVersion = String(data.version ?? "Última Versión");
+        const cleanVersion = rawVersion.toLowerCase().includes("vary") ? "Última Versión" : rawVersion;
 
-        // Ahora aplicamos la limpieza
-        const cleanVersion = rawVersion.toLowerCase().includes('vary') ? 'Última Versión' : rawVersion;
-        const cleanSize = rawSize === '0.0 MB' || rawSize === "" ? 'Variable' : rawSize;
+        const rawSize = String(data.size ?? data.appSize ?? "Variable");
+        const cleanSize = rawSize === "0.0 MB" || rawSize === "" || rawSize === "undefined" ? "Variable" : rawSize;
 
-        let cleanScore = "0.0";
-        if (data.score !== undefined && data.score !== null) {
-          const scoreNum = parseFloat(String(data.score));
-          cleanScore = isNaN(scoreNum) ? "0.0" : scoreNum.toFixed(1);
-        } else if (data.scoreText) {
-          const scoreNum = parseFloat(data.scoreText);
-          cleanScore = isNaN(scoreNum) ? "0.0" : scoreNum.toFixed(1);
-        }
+        const rawScore = data.score ?? data.scoreText ?? 0;
+        const scoreNum = parseFloat(String(rawScore));
+        const cleanScore = isNaN(scoreNum) ? "0.0" : scoreNum.toFixed(1);
 
-        const cleanInstallsText = (installsStr?: string | null): string => {
-          if (!installsStr) return "0";
-          const clean = installsStr.replace(/[, \+]/g, "").trim();
-          const num = parseInt(clean, 10);
-          if (isNaN(num)) {
-            return installsStr.length > 15 ? installsStr.slice(0, 15) : installsStr;
-          }
-          if (num >= 1000000000) {
-            return `${(num / 1000000000).toFixed(0)}B+`;
-          }
-          if (num >= 1000000) {
-            return `${(num / 1000000).toFixed(0)}M+`;
-          }
-          if (num >= 1000) {
-            return `${(num / 1000).toFixed(0)}k+`;
-          }
-          return installsStr;
-        };
-        const cleanInstalls = cleanInstallsText(data.installs);
+        const rawInstalls = String(data.installs ?? "0");
+        const cleanInstalls = rawInstalls === "undefined" || rawInstalls === "" ? "0" : rawInstalls;
 
-        // Mapear al modelo de la base de datos con control de campos nulos
         const appPayload = {
-          name: data.title || "Sin título",
-          description: data.description || "",
-          version: cleanVersion,
-          icon_url: data.icon || null,
-          image_url: data.headerImage || null,
+          name: String(data.title ?? "Sin título"),
+          description: String(data.description ?? ""),
+          version: String(cleanVersion),
+          icon_url: String(data.icon ?? ""),
+          image_url: String(data.headerImage ?? ""),
           screenshots: Array.isArray(data.screenshots) ? data.screenshots : [],
-          download_url: "pending", // Campo requerido por defecto
-          file_size: cleanSize,
-          category: category,
+          download_url: "pending",
+          file_size: String(cleanSize),
+          category: String(category),
           is_premium: false,
           download_count: 0,
-          score: cleanScore,
-          installs: cleanInstalls,
+          score: String(cleanScore),
+          installs: String(cleanInstalls),
         };
 
         const { error: insertError } = await supabaseAdmin
