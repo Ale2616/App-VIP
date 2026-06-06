@@ -82,11 +82,13 @@ export async function POST(request: Request) {
         const category = isGame ? "Juegos" : "Aplicaciones";
 
         // Normalización de datos
-        const rawVersion = data.version || "Última Versión";
-        const cleanVersion = rawVersion.toLowerCase().includes("vary") ? "Última Versión" : rawVersion;
+        const dataAny = data as any; // Usamos 'any' para evitar que TypeScript se bloquee
+        const rawSize = dataAny.size || dataAny.appSize || "Variable";
+        const rawVersion = dataAny.version || "Última Versión";
 
-        const rawSize = data.size || data.appSize || "";
-        const cleanSize = rawSize === "0.0 MB" || !rawSize ? "Variable" : rawSize;
+        // Ahora aplicamos la limpieza
+        const cleanVersion = rawVersion.toLowerCase().includes('vary') ? 'Última Versión' : rawVersion;
+        const cleanSize = rawSize === '0.0 MB' || rawSize === "" ? 'Variable' : rawSize;
 
         let cleanScore = "0.0";
         if (data.score !== undefined && data.score !== null) {
