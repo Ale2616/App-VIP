@@ -25,8 +25,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({
       profile,
       isAuthenticated: true,
-      isAdmin: profile.role === "admin",
-      isVip: ["vip", "elite", "admin"].includes(profile.role),
+      isAdmin: profile.role === "admin" || profile.role === "SUPER_ADMIN" || profile.role === "EDITOR",
+      isVip: ["vip", "elite", "admin", "VIP_PREMIUM", "VIP_ESTANDAR", "SUPER_ADMIN", "EDITOR"].includes(profile.role),
       isLoading: false,
     });
   },

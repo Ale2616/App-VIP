@@ -16,6 +16,7 @@ import BulkUploader from "@/components/BulkUploader";
 import BulkUpload from "@/components/BulkUpload";
 import CsvLinkUpdater from "@/components/CsvLinkUpdater";
 import BulkDeleter from "@/components/BulkDeleter";
+import RoleSelector from "@/components/RoleSelector";
 
 const SYSTEM_CONFIG = {
   BUCKET_NAME: "app-images",
@@ -582,27 +583,43 @@ export default function AdminPanel() {
                   <div key={user.id} className="flex items-center gap-4 p-4 bg-white dark:bg-slate-900/60 backdrop-blur-xl border border-gray-200 dark:border-slate-800/50 rounded-xl hover:border-purple-550/20 shadow-sm transition-all">
                     {/* Avatar */}
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg shrink-0 ${
-                      user.role === "admin"
+                      user.role === "SUPER_ADMIN" || user.role === "admin"
                         ? "bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/20"
-                        : user.role === "elite"
-                        ? "bg-gradient-to-br from-orange-500 to-red-500 shadow-orange-500/20"
-                        : user.role === "vip"
+                        : user.role === "EDITOR"
+                        ? "bg-gradient-to-br from-blue-500 to-indigo-550 shadow-blue-500/20"
+                        : user.role === "VIP_PREMIUM" || user.role === "elite"
                         ? "bg-gradient-to-br from-purple-500 to-fuchsia-500 shadow-purple-500/20"
+                        : user.role === "VIP_ESTANDAR" || user.role === "vip"
+                        ? "bg-gradient-to-br from-indigo-500 to-purple-500 shadow-indigo-500/20"
                         : "bg-gradient-to-br from-slate-500 to-slate-600 shadow-slate-500/20"
                     }`}>
-                      {user.role === "admin" ? <Crown className="w-4 h-4 text-white" /> : user.role === "elite" ? <Sparkles className="w-4 h-4 text-white" /> : user.role === "vip" ? <Crown className="w-4 h-4 text-white" /> : <Users className="w-4 h-4 text-white" />}
+                      {user.role === "SUPER_ADMIN" || user.role === "admin" ? (
+                        <Crown className="w-4 h-4 text-white" />
+                      ) : user.role === "EDITOR" ? (
+                        <Pencil className="w-4 h-4 text-white" />
+                      ) : user.role === "VIP_PREMIUM" || user.role === "elite" || user.role === "VIP_ESTANDAR" || user.role === "vip" ? (
+                        <Sparkles className="w-4 h-4 text-white" />
+                      ) : (
+                        <Users className="w-4 h-4 text-white" />
+                      )}
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.name || "Sin nombre"}</p>
-                        {user.role !== "user" && (
+                        {user.role !== "user" && user.role !== "FREE_USER" && (
                           <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                            user.role === "admin" ? "text-amber-600 bg-amber-500/10 border border-amber-500/20"
-                            : user.role === "elite" ? "text-orange-600 bg-orange-500/10 border border-orange-500/20"
-                            : "text-purple-600 bg-purple-500/10 border border-purple-500/20"
-                          }`}>{user.role === "admin" ? "Admin" : user.role === "elite" ? "Élite" : "VIP"}</span>
+                            user.role === "SUPER_ADMIN" || user.role === "admin" ? "text-amber-600 bg-amber-500/10 border border-amber-500/20"
+                            : user.role === "EDITOR" ? "text-blue-600 bg-blue-500/10 border border-blue-500/20"
+                            : user.role === "VIP_PREMIUM" || user.role === "elite" ? "text-purple-600 bg-purple-500/10 border border-purple-500/20"
+                            : "text-indigo-600 bg-indigo-500/10 border border-indigo-500/20"
+                          }`}>{
+                            user.role === "SUPER_ADMIN" || user.role === "admin" ? "Admin" :
+                            user.role === "EDITOR" ? "Editor" :
+                            user.role === "VIP_PREMIUM" || user.role === "elite" ? "VIP Premium" :
+                            "VIP Estándar"
+                          }</span>
                         )}
                       </div>
                       <p className="text-xs text-gray-500 dark:text-slate-500 flex items-center gap-1.5 mt-0.5 truncate font-semibold">
@@ -610,14 +627,12 @@ export default function AdminPanel() {
                       </p>
                     </div>
 
-                    {/* Botón toggle rol */}
-                    <button
-                      onClick={() => toggleRole(user.id, user.role)}
-                      className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 cursor-pointer"
-                    >
-                      <Shield className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">&rarr; {ROLE_LABELS[ROLE_CYCLE[user.role] || "user"]}</span>
-                    </button>
+                    {/* Gestor de Roles */}
+                    <RoleSelector
+                      userId={user.id}
+                      currentRole={user.role}
+                      onRoleUpdated={() => fetchUsers()}
+                    />
                   </div>
                 ))}
               </div>

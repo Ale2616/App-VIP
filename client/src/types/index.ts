@@ -3,7 +3,7 @@ export interface Profile {
   id: string;
   name: string;
   email: string;
-  role: "user" | "vip" | "elite" | "admin";
+  role: "user" | "vip" | "elite" | "admin" | "SUPER_ADMIN" | "EDITOR" | "VIP_PREMIUM" | "VIP_ESTANDAR" | "FREE_USER";
   avatar_url?: string | null;
   created_at: string;
 }

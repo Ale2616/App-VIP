@@ -184,7 +184,14 @@ export default function Header({
                       <div className="p-4 bg-gray-50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-700">
                         <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{profile?.name}</p>
                         <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
-                          {profile?.role === "admin" ? "👑 Administrador" : "👤 Usuario VIP"}
+                          {profile?.role === "SUPER_ADMIN" ? "👑 Super Admin" :
+                           profile?.role === "EDITOR" ? "✍️ Editor" :
+                           profile?.role === "VIP_PREMIUM" ? "💎 VIP Premium" :
+                           profile?.role === "VIP_ESTANDAR" ? "⭐ VIP Estándar" :
+                           profile?.role === "admin" ? "👑 Administrador" :
+                           profile?.role === "vip" ? "💎 VIP Premium" :
+                           profile?.role === "elite" ? "👑 VIP Élite" :
+                           "👤 Usuario Free"}
                         </p>
                       </div>
                       <div className="p-3 space-y-2.5">

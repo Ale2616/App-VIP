@@ -73,17 +73,21 @@ export default function PlanesPage() {
     if (plan.id === "free") {
       return "Plan Actual";
     }
-    if (plan.id === "vip" && (userRole === "vip" || userRole === "elite" || userRole === "admin"))
+    const hasVipAccess = ["vip", "elite", "admin", "VIP_PREMIUM", "VIP_ESTANDAR", "SUPER_ADMIN", "EDITOR"].includes(userRole);
+    const hasEliteAccess = ["elite", "admin", "VIP_PREMIUM", "SUPER_ADMIN", "EDITOR"].includes(userRole);
+    if (plan.id === "vip" && hasVipAccess)
       return "✓ Activo";
-    if (plan.id === "elite" && (userRole === "elite" || userRole === "admin"))
+    if (plan.id === "elite" && hasEliteAccess)
       return "✓ Activo";
     return plan.cta || "Obtener";
   };
 
   const isDisabled = (planId: string) => {
     if (planId === "free") return true;
-    if (planId === "vip" && ["vip", "elite", "admin"].includes(userRole)) return true;
-    if (planId === "elite" && ["elite", "admin"].includes(userRole)) return true;
+    const hasVipAccess = ["vip", "elite", "admin", "VIP_PREMIUM", "VIP_ESTANDAR", "SUPER_ADMIN", "EDITOR"].includes(userRole);
+    const hasEliteAccess = ["elite", "admin", "VIP_PREMIUM", "SUPER_ADMIN", "EDITOR"].includes(userRole);
+    if (planId === "vip" && hasVipAccess) return true;
+    if (planId === "elite" && hasEliteAccess) return true;
     return false;
   };
 
