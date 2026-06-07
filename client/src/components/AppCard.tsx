@@ -19,6 +19,34 @@ function getCategoryBadgeClass(category: string): string {
 }
 
 /* ─────────────────────────────────────────────────────────
+   formatInstalls — formato compacto estilo Play Store
+   ───────────────────────────────────────────────────────── */
+function formatInstalls(raw?: string | null): string {
+  if (!raw || raw === "0") return "";
+
+  // Limpiar: quitar comas, puntos de miles, espacios, signos +
+  const cleaned = raw.replace(/[,.\s+]+/g, "");
+  const num = parseInt(cleaned, 10);
+
+  // Si ya viene formateado (ej: "10M+"), devolver tal cual
+  if (isNaN(num)) return raw;
+
+  if (num >= 1_000_000_000) {
+    const val = num / 1_000_000_000;
+    return `${val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)}B+`;
+  }
+  if (num >= 1_000_000) {
+    const val = num / 1_000_000;
+    return `${val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)}M+`;
+  }
+  if (num >= 1_000) {
+    const val = num / 1_000;
+    return `${val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)}K+`;
+  }
+  return String(num);
+}
+
+/* ─────────────────────────────────────────────────────────
    AppCard — tarjeta premium para el catálogo
    ───────────────────────────────────────────────────────── */
 export default function AppCard({ app }: { app: App }) {
@@ -66,9 +94,9 @@ export default function AppCard({ app }: { app: App }) {
               </div>
             )}
             
-            {app.installs && app.installs !== "0" && app.installs !== "" && (
+            {formatInstalls(app.installs) && (
               <span className="text-gray-500 dark:text-slate-400 font-medium px-1 bg-gray-50 dark:bg-slate-800/80 rounded border border-gray-100 dark:border-slate-700/60">
-                {app.installs} descargas
+                {formatInstalls(app.installs)} descargas
               </span>
             )}
 
@@ -104,7 +132,7 @@ export default function AppCard({ app }: { app: App }) {
           {/* Contador de descargas */}
           <span className="text-[10px] text-gray-400 dark:text-slate-500 flex items-center gap-1 mt-0.5 font-medium">
             <Download className="w-3 h-3" />
-            {(app.download_count ?? 0).toLocaleString("es-ES")}
+            {formatInstalls(String(app.download_count ?? 0)) || "0"}
           </span>
         </div>
       </div>
