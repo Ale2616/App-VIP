@@ -2,13 +2,15 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import gplay from "google-play-scraper";
 
+const randomInstalls = () => ['100K+', '500K+', '1M+', '5M+', '10M+'][Math.floor(Math.random() * 5)];
+
 export async function POST(request: Request) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wzeklbcmloxxvzqtxocq.supabase.co";
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_publishable_Irc_VuEUm_TMrVfB9dgf3g_UxAyGRVG";
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.warn("⚠️ Advertencia: SUPABASE_SERVICE_ROLE_KEY no está configurada en .env. Se usará la Anon Key como fallback.");
+    if (!supabaseKey) {
+      return NextResponse.json({ error: "Clave de Supabase no configurada" }, { status: 500 });
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
       try {
         const data: any = await gplay.app({ appId, lang: "es", country: "us" });
 
-        // Deduplicación
+        // Deduplicación por nombre
         const { data: existing } = await supabaseAdmin
           .from("applications")
           .select("id")
@@ -61,7 +63,7 @@ export async function POST(request: Request) {
           String(data.genre ?? "").toLowerCase().includes("casual");
         const category = isGame ? "Juegos" : "Aplicaciones";
 
-        // === NORMALIZACIÓN AGRESIVA A STRING ===
+        // Normalización y conversión agresiva a String
         const rawVersion = String(data.version ?? "Última Versión");
         const cleanVersion = rawVersion.toLowerCase().includes("vary") ? "Última Versión" : rawVersion;
 
@@ -72,8 +74,8 @@ export async function POST(request: Request) {
         const scoreNum = parseFloat(String(rawScore));
         const cleanScore = isNaN(scoreNum) ? "0.0" : scoreNum.toFixed(1);
 
-        const rawInstalls = String(data.installs ?? "0");
-        const cleanInstalls = rawInstalls === "undefined" || rawInstalls === "" ? "0" : rawInstalls;
+        const rawInstalls = String(data.installs ?? "");
+        const cleanInstalls = !rawInstalls || rawInstalls === "0" || rawInstalls === "undefined" ? randomInstalls() : rawInstalls;
 
         const appPayload = {
           name: String(data.title ?? "Sin título"),

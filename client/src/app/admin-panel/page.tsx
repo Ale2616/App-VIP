@@ -6,13 +6,14 @@ import { useAuthStore } from "@/store/auth-store";
 import {
   Plus, Pencil, Trash2, ExternalLink, Loader2, Download,
   Image as ImageIcon, X, Search, AlertTriangle, Globe,
-  CheckCircle2, Database, Zap, ArrowLeft, Crown,
+  CheckCircle2, Database, Zap, ArrowLeft, Crown, Check,
   Sparkles, AppWindow, Gamepad2, Bot, Users, Shield, Mail,
   Settings, ImagePlus, Monitor, RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import BulkUploader from "@/components/BulkUploader";
+import BulkUpload from "@/components/BulkUpload";
 import CsvLinkUpdater from "@/components/CsvLinkUpdater";
 import BulkDeleter from "@/components/BulkDeleter";
 
@@ -45,6 +46,8 @@ interface Application {
   installs?: string;
   created_at: string;
   updated_at?: string;
+  mod?: string | null;
+  content_rating?: string | null;
 }
 
 const checkCategoryGroup = (appCategory: string, group: string) => {
@@ -82,7 +85,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("TODOS");
-  const [activeTab, setActiveTab] = useState<"apps" | "usuarios" | "bulk" | "bulk-links" | "bulk-delete">("apps");
+  const [activeTab, setActiveTab] = useState<"apps" | "usuarios" | "bulk" | "bulk-json" | "bulk-links" | "bulk-delete" | "membresias">("apps");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingApp, setEditingApp] = useState<Application | null>(null);
   const [notification, setNotification] = useState<{ msg: string; type: "success" | "error" } | null>(null);
@@ -420,6 +423,10 @@ export default function AdminPanel() {
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${activeTab === "bulk" ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md" : "bg-white dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-850 hover:border-gray-300 dark:hover:border-slate-700"}`}>
             <Zap className="w-4 h-4" /> Subida Masiva
           </button>
+          <button onClick={() => setActiveTab("bulk-json")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${activeTab === "bulk-json" ? "bg-gradient-to-r from-indigo-500 to-fuchsia-600 text-white shadow-md" : "bg-white dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-850 hover:border-gray-300 dark:hover:border-slate-700"}`}>
+            <Zap className="w-4 h-4" /> Subida Masiva JSON
+          </button>
           <button onClick={() => setActiveTab("bulk-links")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${activeTab === "bulk-links" ? "bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-md" : "bg-white dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-850 hover:border-gray-300 dark:hover:border-slate-700"}`}>
             <RefreshCw className="w-4 h-4" /> Actualizar Enlaces
@@ -427,6 +434,10 @@ export default function AdminPanel() {
           <button onClick={() => setActiveTab("bulk-delete")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${activeTab === "bulk-delete" ? "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-md" : "bg-white dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-850 hover:border-gray-300 dark:hover:border-slate-700"}`}>
             <Trash2 className="w-4 h-4" /> Eliminar Masivamente
+          </button>
+          <button onClick={() => setActiveTab("membresias")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${activeTab === "membresias" ? "bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white shadow-md" : "bg-white dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-850 hover:border-gray-300 dark:hover:border-slate-700"}`}>
+            <Crown className="w-4 h-4" /> Gestión de Membresías
           </button>
         </div>
 
@@ -621,6 +632,13 @@ export default function AdminPanel() {
           </div>
         )}
 
+        {/* SECCIÓN SUBIDA MASIVA JSON */}
+        {activeTab === "bulk-json" && (
+          <div className="max-w-2xl mx-auto">
+            <BulkUpload />
+          </div>
+        )}
+
         {/* SECCIÓN ACTUALIZAR ENLACES */}
         {activeTab === "bulk-links" && (
           <div className="max-w-2xl mx-auto">
@@ -632,6 +650,13 @@ export default function AdminPanel() {
         {activeTab === "bulk-delete" && (
           <div className="max-w-2xl mx-auto">
             <BulkDeleter />
+          </div>
+        )}
+
+        {/* SECCIÓN GESTIÓN DE MEMBRESÍAS VIP */}
+        {activeTab === "membresias" && (
+          <div className="w-full">
+            <MembresiasTab />
           </div>
         )}
       </div>
@@ -662,6 +687,15 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
   const [screenshots, setScreenshots] = useState<ScreenshotItem[]>(
     (app?.screenshots || []).map(url => ({ id: url, url }))
   );
+
+  const formatInitialInstalls = (val?: string) => {
+    if (!val) return "";
+    const cleanDigits = val.replace(/\D/g, "");
+    if (!cleanDigits) return val;
+    const parsed = parseInt(cleanDigits, 10);
+    return isNaN(parsed) ? val : parsed.toLocaleString("es-ES");
+  };
+
   const [formData, setFormData] = useState({
     name: app?.name || "",
     description: app?.description || "",
@@ -670,7 +704,45 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
     download_url: app?.download_url || "",
     image_url: app?.image_url || "",
     is_premium: app?.is_premium || false,
+    score: app?.score || "",
+    installs: formatInitialInstalls(app?.installs || ""),
+    mod: app?.mod || "",
+    content_rating: app?.content_rating || "3+",
   });
+
+  const handleInstallsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const lower = rawValue.trim().toLowerCase();
+    
+    if (lower.endsWith("k") || lower.endsWith("m") || lower.endsWith("b")) {
+      const suffix = lower.slice(-1);
+      const numPart = lower.slice(0, -1).trim();
+      const num = parseFloat(numPart.replace(/,/g, "."));
+      if (!isNaN(num)) {
+        let multiplier = 1;
+        if (suffix === "k") multiplier = 1000;
+        if (suffix === "m") multiplier = 1000000;
+        if (suffix === "b") multiplier = 1000000000;
+        
+        const calculated = Math.round(num * multiplier);
+        setFormData(prev => ({ ...prev, installs: calculated.toLocaleString("es-ES") }));
+        return;
+      }
+    }
+
+    const cleanDigits = rawValue.replace(/\D/g, "");
+    if (cleanDigits === "") {
+      setFormData(prev => ({ ...prev, installs: "" }));
+      return;
+    }
+    
+    const parsed = parseInt(cleanDigits, 10);
+    if (!isNaN(parsed)) {
+      setFormData(prev => ({ ...prev, installs: parsed.toLocaleString("es-ES") }));
+    } else {
+      setFormData(prev => ({ ...prev, installs: rawValue }));
+    }
+  };
 
   // ── Scraper / Autocompletar ──
   const [scraperAppId, setScraperAppId] = useState("");
@@ -691,10 +763,29 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Error desconocido");
 
+      const ratingRaw = json.contentRating || "";
+      let ratingFormatted = "3+";
+      if (ratingRaw) {
+        const numMatch = ratingRaw.match(/\d+/);
+        if (numMatch) {
+          ratingFormatted = `${numMatch[0]}+`;
+        } else {
+          const lower = ratingRaw.toLowerCase();
+          if (lower.includes("everyone")) ratingFormatted = "3+";
+          else if (lower.includes("teen")) ratingFormatted = "12+";
+          else if (lower.includes("mature")) ratingFormatted = "17+";
+          else if (lower.includes("adult")) ratingFormatted = "18+";
+          else ratingFormatted = ratingRaw;
+        }
+      }
+
       setFormData(prev => ({
         ...prev,
         name: json.title || prev.name,
         description: json.description || prev.description,
+        score: json.scoreText || (json.score !== undefined ? String(json.score) : prev.score),
+        installs: json.installs ? formatInitialInstalls(json.installs) : prev.installs,
+        content_rating: ratingFormatted,
       }));
 
       if (json.icon) {
@@ -868,6 +959,10 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
         screenshots: finalScreenshots,
         download_options: cleanedOptions,
         is_premium: formData.is_premium,
+        score: formData.score.trim() || null,
+        installs: formData.installs ? formData.installs.replace(/\./g, "").trim() : null,
+        mod: formData.mod.trim() || null,
+        content_rating: formData.content_rating || null,
       };
 
       console.log("📤 Paso 3: Guardando en Supabase...");
@@ -895,7 +990,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 z-[500]">
-      <div className="bg-gradient-to-b from-white to-gray-50 dark:from-slate-905 dark:to-slate-955 border border-gray-200 dark:border-slate-800/50 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transition-colors">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800/50 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transition-colors">
         {/* Header del modal */}
         <div className="px-4 sm:px-7 py-5 border-b border-gray-200 dark:border-slate-800/50 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -907,7 +1002,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
               <p className="text-xs text-purple-600 dark:text-purple-400 font-bold">Completa todos los campos</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-xl transition-all text-gray-400 dark:text-slate-500 hover:text-gray-950 dark:hover:text-white cursor-pointer">
+          <button onClick={onClose} className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-xl transition-all text-gray-400 dark:text-slate-500 hover:text-gray-955 dark:hover:text-white cursor-pointer">
             <X size={20} />
           </button>
         </div>
@@ -916,7 +1011,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
         <form onSubmit={handleSave} className="p-4 sm:p-7 overflow-y-auto space-y-6 flex-1 text-gray-900 dark:text-white">
           {/* ═══ AUTOCOMPLETAR DESDE GOOGLE PLAY ═══ */}
           <div className="bg-gradient-to-r from-blue-500/5 to-cyan-500/5 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4">
-            <label className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+            <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5 mb-2">
               <Globe size={14} />
               ID de Google Play (Opcional)
             </label>
@@ -924,7 +1019,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
               <input
                 type="text"
                 placeholder="com.whatsapp"
-                className="flex-1 bg-white dark:bg-slate-900/80 border border-gray-250 dark:border-slate-700/50 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all font-mono text-sm text-blue-600 dark:text-blue-300 placeholder:text-gray-400 dark:placeholder:text-slate-600"
+                className="flex-1 bg-gray-100 dark:bg-slate-800 border border-gray-250 dark:border-slate-700/50 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all font-mono text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-600"
                 value={scraperAppId}
                 onChange={(e) => setScraperAppId(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAutoComplete(); } }}
@@ -951,23 +1046,23 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
             {/* Izquierda */}
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">Nombre</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider block mb-1.5">Nombre</label>
                 <input required placeholder="Nombre de la aplicación"
-                  className="w-full bg-white dark:bg-slate-900/80 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-650 text-sm"
+                  className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 text-sm"
                   value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">Versión</label>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider block mb-1.5">Versión</label>
                   <input required placeholder="1.0.0"
-                    className="w-full bg-white dark:bg-slate-900/80 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-bold text-gray-900 dark:text-slate-300 text-sm"
+                    className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-bold text-gray-900 dark:text-white text-sm"
                     value={formData.version} onChange={(e) => setFormData({ ...formData, version: e.target.value })} />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">Categoría</label>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider block mb-1.5">Categoría</label>
                   <select
-                    className="w-full bg-white dark:bg-slate-900/80 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-bold text-gray-900 dark:text-slate-300 appearance-none cursor-pointer text-sm"
+                    className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-bold text-gray-900 dark:text-white appearance-none cursor-pointer text-sm"
                     value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })}>
                     <option value="Aplicación">Aplicación</option>
                     <option value="Juegos">Juegos</option>
@@ -977,8 +1072,39 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                 </div>
               </div>
 
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider block mb-1.5">Calificación</label>
+                  <input placeholder="4.5"
+                    className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-bold text-gray-900 dark:text-white text-sm"
+                    value={formData.score} onChange={(e) => setFormData({ ...formData, score: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider block mb-1.5">Edad</label>
+                  <input placeholder="3+"
+                    className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-bold text-gray-900 dark:text-white text-sm"
+                    value={formData.content_rating} onChange={(e) => setFormData({ ...formData, content_rating: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider block mb-1.5">Descargas</label>
+                  <input placeholder="1.000.000"
+                    className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-bold text-gray-900 dark:text-white text-sm"
+                    value={formData.installs} onChange={handleInstallsChange} />
+                  <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1">
+                    Leyendo: {formData.installs ? formData.installs : "0"}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider block mb-1.5">Descripción del MOD</label>
+                <input placeholder="ej. Funciones Premium Desbloqueadas, Dinero ilimitado"
+                  className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-bold text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-slate-500"
+                  value={formData.mod} onChange={(e) => setFormData({ ...formData, mod: e.target.value })} />
+              </div>
+
               {/* ── Toggle Solo VIP ── */}
-              <div className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-amber-500/5 to-orange-500/5 border border-amber-250 dark:border-amber-500/20">
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-amber-500/5 to-orange-500/5 border border-amber-255 dark:border-amber-500/20">
                 <div className="flex items-center gap-2.5">
                   <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500">
                     <Crown size={14} className="text-white" />
@@ -1004,22 +1130,22 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">URL de Descarga</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider block mb-1.5">URL de Descarga</label>
                 <input required type="url" placeholder="https://ejemplo.com/descarga"
-                  className="w-full bg-white dark:bg-slate-900/80 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-bold text-purple-600 dark:text-purple-400 text-sm placeholder:text-gray-400 dark:placeholder:text-slate-650"
+                  className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-bold text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-slate-500"
                   value={formData.download_url} onChange={(e) => setFormData({ ...formData, download_url: e.target.value })} />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">Descripción</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider block mb-1.5">Descripción</label>
                 <textarea required placeholder="Describe la aplicación..."
-                  className="w-full bg-white dark:bg-slate-900/80 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl h-24 outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-semibold resize-none text-sm leading-relaxed text-gray-900 dark:text-slate-300 placeholder:text-gray-400 dark:placeholder:text-slate-650"
+                  className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl h-24 outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-semibold resize-none text-sm leading-relaxed text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
                   value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">Capturas de pantalla</label>
-                <div className="bg-gray-50 dark:bg-slate-900/80 border-2 border-dashed border-gray-250 dark:border-slate-700/50 p-4 rounded-xl transition-all hover:border-purple-500/40">
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider block mb-1.5">Capturas de pantalla</label>
+                <div className="bg-gray-100 dark:bg-slate-800 border-2 border-dashed border-gray-250 dark:border-slate-700/50 p-4 rounded-xl transition-all hover:border-purple-500/40">
                   <div className="grid grid-cols-3 gap-3">
                     {screenshots.map((s) => (
                       <div key={s.id} className="relative aspect-video rounded-lg overflow-hidden group border border-gray-200 dark:border-slate-700">
@@ -1030,8 +1156,8 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                       </div>
                     ))}
                     <div className="relative aspect-video rounded-lg border-2 border-dashed border-gray-250 dark:border-slate-700 hover:border-purple-500/40 flex flex-col items-center justify-center cursor-pointer overflow-hidden">
-                      <Plus className="text-gray-400 dark:text-slate-505 mb-1" size={20} />
-                      <span className="text-[10px] text-gray-400 dark:text-slate-505 font-bold">Añadir</span>
+                      <Plus className="text-gray-400 dark:text-slate-500 mb-1" size={20} />
+                      <span className="text-[10px] text-gray-400 dark:text-slate-500 font-bold">Añadir</span>
                       <input type="file" accept="image/*" multiple onChange={handleScreenshotChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                     </div>
                   </div>
@@ -1042,13 +1168,13 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
             {/* Derecha — Imagen */}
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">Imagen / Logo (Icono)</label>
-                <div className="relative aspect-video bg-gray-50 dark:bg-slate-900/80 border-2 border-dashed border-gray-250 dark:border-slate-700/50 rounded-2xl overflow-hidden group hover:border-purple-500/40 transition-all cursor-pointer">
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider block mb-1.5">Imagen / Logo (Icono)</label>
+                <div className="relative aspect-video bg-gray-100 dark:bg-slate-800 border-2 border-dashed border-gray-250 dark:border-slate-700/50 rounded-2xl overflow-hidden group hover:border-purple-500/40 transition-all cursor-pointer">
                   {preview ? (
                     <img src={preview} alt="Vista previa" className="w-full h-full object-cover pointer-events-none" />
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-slate-655 pointer-events-none">
-                      <div className="p-3 rounded-xl bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700/40 mb-2"><ImageIcon size={28} /></div>
+                    <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-slate-500 pointer-events-none">
+                      <div className="p-3 rounded-xl bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700/40 mb-2"><ImageIcon size={28} /></div>
                       <p className="text-xs font-bold">Clic para cargar imagen</p>
                     </div>
                   )}
@@ -1067,17 +1193,17 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">URL del Banner (Opcional)</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider block mb-1.5">URL del Banner (Opcional)</label>
                 <input type="url" placeholder="https://ejemplo.com/banner.jpg"
-                  className="w-full bg-white dark:bg-slate-900/80 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-bold text-purple-600 dark:text-purple-400 text-sm placeholder:text-gray-400 dark:placeholder:text-slate-650"
+                  className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-250 dark:border-slate-700/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/50 transition-all font-bold text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-slate-500"
                   value={formData.image_url} onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} />
               </div>
 
               <div className="bg-gray-100/50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-800/50 rounded-xl p-4 space-y-2.5">
-                <h4 className="text-xs font-bold text-gray-500 dark:text-slate-400 flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
                   <Database size={12} /> Configuración
                 </h4>
-                <div className="space-y-1.5 text-xs text-gray-550 dark:text-slate-500 font-semibold">
+                <div className="space-y-1.5 text-xs text-gray-550 dark:text-slate-400 font-semibold">
                   <div className="flex justify-between"><span>Bucket</span><span className="text-purple-600 dark:text-purple-400 font-mono">app-images</span></div>
                   <div className="flex justify-between"><span>Tabla</span><span className="text-purple-600 dark:text-purple-400 font-mono">applications</span></div>
                 </div>
@@ -1088,7 +1214,7 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
           {/* ═══ OPCIONES DE DESCARGA ═══ */}
           <div className="border-t border-gray-200 dark:border-slate-800/50 pt-5">
             <div className="flex items-center justify-between mb-3">
-              <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <label className="text-xs font-bold text-gray-650 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Download size={14} className="text-emerald-500" />
                 Opciones de Descarga
               </label>
@@ -1107,9 +1233,9 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
 
             <div className="space-y-3">
               {downloadOptions.map((opt, idx) => (
-                <div key={opt.id} className="bg-gray-55/65 dark:bg-slate-900/60 border border-gray-200 dark:border-slate-800/50 rounded-xl p-3 space-y-2">
+                <div key={opt.id} className="bg-gray-100 dark:bg-slate-900/60 border border-gray-200 dark:border-slate-800/50 rounded-xl p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-extrabold text-gray-400 dark:text-slate-505 uppercase">Opción {idx + 1}</span>
+                    <span className="text-[11px] font-extrabold text-gray-400 dark:text-slate-500 uppercase">Opción {idx + 1}</span>
                     <button type="button" onClick={() => removeDownloadOption(opt.id)} className="p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all cursor-pointer">
                       <Trash2 size={14} />
                     </button>
@@ -1118,28 +1244,28 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
                     <input
                       type="text"
                       placeholder="Título (ej. Premium Mod)"
-                      className="col-span-2 w-full bg-white dark:bg-slate-950/80 border border-gray-200 dark:border-slate-700/50 p-2.5 rounded-lg text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-slate-650 outline-none focus:ring-1 focus:ring-emerald-500/50"
+                      className="col-span-2 w-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700/50 p-2.5 rounded-lg text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:ring-1 focus:ring-emerald-500/50"
                       value={opt.title}
                       onChange={e => updateDownloadOption(idx, "title", e.target.value)}
                     />
                     <input
                       type="text"
                       placeholder="Versión (ej. v1.0)"
-                      className="w-full bg-white dark:bg-slate-950/80 border border-gray-200 dark:border-slate-700/50 p-2.5 rounded-lg text-gray-900 dark:text-slate-300 text-sm placeholder:text-gray-400 dark:placeholder:text-slate-655 outline-none focus:ring-1 focus:ring-emerald-500/50"
+                      className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700/50 p-2.5 rounded-lg text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:ring-1 focus:ring-emerald-500/50"
                       value={opt.version}
                       onChange={e => updateDownloadOption(idx, "version", e.target.value)}
                     />
                     <input
                       type="text"
                       placeholder="Tamaño (ej. 105 MB)"
-                      className="w-full bg-white dark:bg-slate-950/80 border border-gray-200 dark:border-slate-700/50 p-2.5 rounded-lg text-gray-900 dark:text-slate-300 text-sm placeholder:text-gray-400 dark:placeholder:text-slate-655 outline-none focus:ring-1 focus:ring-emerald-500/50"
+                      className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700/50 p-2.5 rounded-lg text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:ring-1 focus:ring-emerald-500/50"
                       value={opt.size}
                       onChange={e => updateDownloadOption(idx, "size", e.target.value)}
                     />
                     <input
                       type="text"
                       placeholder="URL de descarga (https://...)"
-                      className="col-span-2 w-full bg-white dark:bg-slate-955/80 border border-gray-200 dark:border-slate-700/50 p-2.5 rounded-lg text-emerald-600 dark:text-emerald-400 text-sm placeholder:text-gray-400 dark:placeholder:text-slate-655 outline-none focus:ring-1 focus:ring-emerald-500/50"
+                      className="col-span-2 w-full bg-gray-100 dark:bg-slate-800 border border-gray-250 dark:border-slate-700/50 p-2.5 rounded-lg text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:ring-1 focus:ring-emerald-500/50"
                       value={opt.url}
                       onChange={e => updateDownloadOption(idx, "url", e.target.value)}
                     />
@@ -1163,6 +1289,317 @@ function AppModal({ app, onClose, onSaved }: { app: Application | null; onClose:
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function MembresiasTab() {
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingPlan, setEditingPlan] = useState<any | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Form states
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [features, setFeatures] = useState<Array<{ text: string; included: boolean }>>([]);
+
+  const fetchPlans = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("subscription_plans")
+        .select("*");
+      if (!error && data) {
+        const sorted = data.sort((a, b) => {
+          const order: Record<string, number> = { free: 1, vip: 2, elite: 3 };
+          return (order[a.id] || 99) - (order[b.id] || 99);
+        });
+        setPlans(sorted);
+      }
+    } catch (err) {
+      console.error("Error loading plans:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  const startEdit = (plan: any) => {
+    setEditingPlan(plan);
+    setName(plan.name);
+    setPrice(plan.price.replace(/[^0-9]/g, ""));
+    setDescription(plan.description);
+    
+    let parsedFeatures: any[] = [];
+    if (Array.isArray(plan.features)) {
+      parsedFeatures = plan.features;
+    } else if (typeof plan.features === "string") {
+      try {
+        parsedFeatures = JSON.parse(plan.features);
+      } catch {
+        parsedFeatures = [];
+      }
+    }
+    setFeatures(parsedFeatures);
+  };
+
+  const handleAddFeature = () => {
+    setFeatures([...features, { text: "", included: true }]);
+  };
+
+  const handleRemoveFeature = (index: number) => {
+    setFeatures(features.filter((_, idx) => idx !== index));
+  };
+
+  const handleFeatureChange = (index: number, text: string) => {
+    const updated = [...features];
+    updated[index].text = text;
+    setFeatures(updated);
+  };
+
+  const handleFeatureToggle = (index: number) => {
+    const updated = [...features];
+    updated[index].included = !updated[index].included;
+    setFeatures(updated);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPlan) return;
+    setSaving(true);
+
+    let formattedPrice = price;
+    if (/^\d+$/.test(price)) {
+      const parsed = parseInt(price, 10);
+      formattedPrice = `$${parsed.toLocaleString("es-CO")} COP`;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("subscription_plans")
+        .update({
+          name,
+          price: formattedPrice,
+          description,
+          features: JSON.stringify(features),
+        })
+        .eq("id", editingPlan.id);
+
+      if (error) throw error;
+      setEditingPlan(null);
+      fetchPlans();
+    } catch (err: any) {
+      alert("Error guardando plan: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Crown className="w-5 h-5 text-purple-550" /> Gestión de Membresías VIP
+        </h2>
+      </div>
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-purple-650" />
+          <p className="text-sm text-slate-450">Cargando planes...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {plans.map((plan) => (
+            <div
+              key={plan.id}
+              className={`relative bg-white dark:bg-slate-900 border-2 ${
+                plan.id === "vip"
+                  ? "border-purple-500/40 shadow-purple-500/5 shadow-md"
+                  : plan.id === "elite"
+                  ? "border-amber-500/40 shadow-amber-500/5 shadow-md"
+                  : "border-gray-200 dark:border-slate-800/80"
+              } rounded-2xl p-6 flex flex-col justify-between`}
+            >
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{plan.name}</h3>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-4">{plan.description}</p>
+                <div className="text-2xl font-extrabold text-gray-900 dark:text-white mb-4">
+                  {plan.price} <span className="text-xs font-normal text-slate-500">{plan.period}</span>
+                </div>
+                
+                <ul className="space-y-2 mb-6">
+                  {((Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || "[]")) as any[]).map((feature: any, idx: number) => (
+                    <li key={idx} className="flex items-center gap-2 text-xs text-gray-650 dark:text-slate-300">
+                      {feature.included ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      ) : (
+                        <X className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                      )}
+                      <span className={feature.included ? "" : "line-through text-slate-500"}>
+                        {feature.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <button
+                onClick={() => startEdit(plan)}
+                className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-indigo-50 dark:bg-indigo-550/10 hover:bg-indigo-100 dark:hover:bg-indigo-550/20 text-indigo-600 dark:text-indigo-400 font-bold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Editar Plan
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal de Edición */}
+      {editingPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
+            <button
+              onClick={() => setEditingPlan(null)}
+              className="absolute top-4 right-4 p-2 rounded-xl text-gray-400 hover:text-gray-650 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <form onSubmit={handleSave} className="space-y-5">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  Editar Plan: {editingPlan.name}
+                </h3>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
+                    Nombre del Plan
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full h-10 px-3.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
+                    Precio (COP)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="Ej. 20000"
+                    className="w-full h-10 px-3.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
+                    Descripción del Plan
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full h-10 px-3.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300">
+                      Beneficios
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAddFeature}
+                      className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold rounded-lg border border-indigo-500/25 transition-all cursor-pointer"
+                    >
+                      + Añadir Beneficio
+                    </button>
+                  </div>
+
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+                    {features.map((feature, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleFeatureToggle(idx)}
+                          className={`px-2 py-1.5 rounded-lg text-[10px] font-extrabold uppercase shrink-0 transition-colors cursor-pointer ${
+                            feature.included
+                              ? "bg-emerald-500/15 text-emerald-600 border border-emerald-500/20"
+                              : "bg-red-500/15 text-red-650 border border-red-500/20"
+                          }`}
+                        >
+                          {feature.included ? "Incluido" : "Bloqueado"}
+                        </button>
+                        <input
+                          type="text"
+                          required
+                          value={feature.text}
+                          onChange={(e) => handleFeatureChange(idx, e.target.value)}
+                          placeholder="Sin anuncios, descargas ilimitadas..."
+                          className="flex-1 h-8 px-2.5 rounded-lg border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500/40 text-gray-900 dark:text-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFeature(idx)}
+                          className="p-1.5 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    {features.length === 0 && (
+                      <p className="text-xs text-gray-500 dark:text-slate-500 italic text-center py-2">
+                        No hay beneficios configurados.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 justify-end pt-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingPlan(null)}
+                  className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <span>Guardar Cambios</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

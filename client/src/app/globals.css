@@ -131,3 +131,26 @@
 
 .spec-table-row:nth-child(odd) { background: rgba(148,163,184,.04); }
 .spec-table-row:nth-child(even) { background: rgba(148,163,184,.08); }
+
+/* Estilo de Scrollbar Custom */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(75, 85, 99, 0.7) transparent;
+}
+.dark .scrollbar-thin {
+  scrollbar-color: rgba(209, 213, 219, 0.4) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(75, 85, 99, 0.7);
+  border-radius: 9999px;
+}
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(209, 213, 219, 0.4);
+}

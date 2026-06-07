@@ -1,107 +1,60 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/auth-store";
+import { supabase } from "@/lib/supabase";
 import {
   Crown,
   Sparkles,
   Shield,
-  Zap,
   Download,
   Lock,
   Check,
   Star,
   Rocket,
-  Gamepad2,
   ArrowLeft,
   MessageCircle,
-  Monitor,
+  Loader2,
 } from "lucide-react";
 
 const WHATSAPP_NUMBER = "573115397930";
 
-const plans = [
-  {
-    id: "free",
-    name: "Gratis",
-    price: "$0",
-    period: "para siempre",
-    description: "Acceso básico al catálogo de aplicaciones y juegos.",
-    gradient: "from-slate-600 to-slate-700",
-    borderColor: "border-slate-700/50",
-    glowColor: "shadow-slate-500/5",
-    iconBg: "from-slate-500 to-slate-600",
-    icon: Download,
-    features: [
-      { text: "Catálogo completo de apps", included: true },
-      { text: "Descargas con publicidad", included: true },
-      { text: "Actualizaciones básicas", included: true },
-      { text: "Enlaces directos", included: false },
-      { text: "Mods exclusivos", included: false },
-      { text: "Juegos de PC", included: false },
-      { text: "Peticiones directas", included: false },
-    ],
-    cta: "Plan Actual",
-    ctaStyle: "bg-slate-700 text-slate-300 cursor-default",
-    popular: false,
-  },
-  {
-    id: "vip",
-    name: "VIP Premium",
-    price: "$4.99",
-    period: "/mes",
-    description: "Enlaces directos, cero publicidad y mods exclusivos.",
-    gradient: "from-purple-500 to-fuchsia-600",
-    borderColor: "border-purple-500/40",
-    glowColor: "shadow-purple-500/20",
-    iconBg: "from-purple-500 to-fuchsia-500",
-    icon: Crown,
-    features: [
-      { text: "Todo del plan Gratis", included: true },
-      { text: "Enlaces directos sin publicidad", included: true },
-      { text: "Mods y APKs exclusivos", included: true },
-      { text: "Soporte prioritario", included: true },
-      { text: "Actualizaciones anticipadas", included: true },
-      { text: "Juegos de PC", included: false },
-      { text: "Peticiones directas", included: false },
-    ],
-    cta: "Obtener VIP Premium",
-    ctaStyle:
-      "bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-600 hover:to-fuchsia-700 text-white shadow-lg shadow-purple-500/25",
-    popular: true,
-  },
-  {
-    id: "elite",
-    name: "VIP Élite",
-    price: "$9.99",
-    period: "/mes",
-    description:
-      "Acceso total: PC, peticiones y contenido ilimitado.",
-    gradient: "from-amber-500 to-orange-500",
-    borderColor: "border-amber-500/40",
-    glowColor: "shadow-amber-500/20",
-    iconBg: "from-amber-500 to-orange-500",
-    icon: Rocket,
-    features: [
-      { text: "Todo del plan VIP Premium", included: true },
-      { text: "Juegos de PC completos", included: true },
-      { text: "Software de PC premium", included: true },
-      { text: "Peticiones directas al equipo", included: true },
-      { text: "Acceso beta a nuevas apps", included: true },
-      { text: "Badge Élite en tu perfil", included: true },
-      { text: "Canal privado exclusivo", included: true },
-    ],
-    cta: "Obtener VIP Élite",
-    ctaStyle:
-      "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25",
-    popular: false,
-  },
-];
+const iconMap: Record<string, any> = {
+  Download,
+  Crown,
+  Rocket,
+};
 
 export default function PlanesPage() {
   const { isAuthenticated, profile } = useAuthStore();
   const userRole = profile?.role || "user";
+
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("subscription_plans")
+          .select("*");
+        if (!error && data) {
+          const sorted = data.sort((a, b) => {
+            const order: Record<string, number> = { free: 1, vip: 2, elite: 3 };
+            return (order[a.id] || 99) - (order[b.id] || 99);
+          });
+          setPlans(sorted);
+        }
+      } catch (err) {
+        console.error("Error loading plans:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPlans();
+  }, []);
 
   const handlePlanClick = (planId: string) => {
     if (planId === "free") return;
@@ -116,16 +69,15 @@ export default function PlanesPage() {
     );
   };
 
-  const getCtaLabel = (planId: string) => {
-    if (planId === "free") {
-      if (!isAuthenticated) return "Plan Actual";
+  const getCtaLabel = (plan: any) => {
+    if (plan.id === "free") {
       return "Plan Actual";
     }
-    if (planId === "vip" && (userRole === "vip" || userRole === "elite" || userRole === "admin"))
+    if (plan.id === "vip" && (userRole === "vip" || userRole === "elite" || userRole === "admin"))
       return "✓ Activo";
-    if (planId === "elite" && (userRole === "elite" || userRole === "admin"))
+    if (plan.id === "elite" && (userRole === "elite" || userRole === "admin"))
       return "✓ Activo";
-    return plans.find((p) => p.id === planId)?.cta || "Obtener";
+    return plan.cta || "Obtener";
   };
 
   const isDisabled = (planId: string) => {
@@ -191,102 +143,116 @@ export default function PlanesPage() {
           </p>
         </motion.div>
 
-        {/* Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-20">
-          {plans.map((plan, index) => {
-            const Icon = plan.icon;
-            const disabled = isDisabled(plan.id);
-            const label = getCtaLabel(plan.id);
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-purple-550" />
+            <p className="text-sm text-slate-400">Cargando planes de membresía...</p>
+          </div>
+        ) : (
+          /* Cards */
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-20">
+            {plans.map((plan, index) => {
+              const Icon = iconMap[plan.icon_name] || Download;
+              const disabled = isDisabled(plan.id);
+              const label = getCtaLabel(plan);
+              
+              // Parse features if they come as a string or array
+              const featuresList: any[] = Array.isArray(plan.features)
+                ? plan.features
+                : typeof plan.features === "string"
+                ? JSON.parse(plan.features)
+                : [];
 
-            return (
-              <motion.div
-                key={plan.id}
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.15 }}
-                className={`relative group ${plan.popular ? "md:-translate-y-4" : ""}`}
-              >
-                {/* Popular badge */}
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-                    <div className="bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white text-xs font-bold px-5 py-1.5 rounded-full shadow-lg shadow-purple-500/30 flex items-center gap-1.5">
-                      <Star className="w-3.5 h-3.5 fill-white" />
-                      MÁS POPULAR
-                    </div>
-                  </div>
-                )}
-
-                {/* Glow */}
-                <div
-                  className={`absolute inset-0 bg-gradient-to-br ${plan.gradient} rounded-2xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500`}
-                />
-
-                {/* Card */}
-                <div
-                  className={`relative bg-slate-900/80 backdrop-blur-xl border-2 ${plan.borderColor} rounded-2xl p-7 h-full flex flex-col transition-all duration-300 group-hover:border-opacity-80 ${plan.glowColor} group-hover:shadow-2xl`}
+              return (
+                <motion.div
+                  key={plan.id}
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.15 }}
+                  className={`relative group ${plan.popular ? "md:-translate-y-4" : ""}`}
                 >
-                  {/* Icon + Title */}
-                  <div className="mb-6">
-                    <div
-                      className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${plan.iconBg} flex items-center justify-center mb-4 shadow-lg`}
-                    >
-                      <Icon className="w-7 h-7 text-white" />
+                  {/* Popular badge */}
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                      <div className="bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white text-xs font-bold px-5 py-1.5 rounded-full shadow-lg shadow-purple-500/30 flex items-center gap-1.5">
+                        <Star className="w-3.5 h-3.5 fill-white" />
+                        MÁS POPULAR
+                      </div>
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-1">{plan.name}</h3>
-                    <p className="text-sm text-slate-400">{plan.description}</p>
-                  </div>
+                  )}
 
-                  {/* Price */}
-                  <div className="flex items-baseline gap-1 mb-8">
-                    <span className="text-4xl font-extrabold text-white">{plan.price}</span>
-                    <span className="text-slate-500 text-sm">{plan.period}</span>
-                  </div>
+                  {/* Glow */}
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-br ${plan.gradient} rounded-2xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500`}
+                  />
 
-                  {/* Features */}
-                  <ul className="space-y-3 mb-8 flex-1">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        {feature.included ? (
-                          <div className="mt-0.5 p-0.5 rounded-full bg-emerald-500/20">
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          </div>
-                        ) : (
-                          <div className="mt-0.5 p-0.5 rounded-full bg-slate-700/50">
-                            <Lock className="w-3.5 h-3.5 text-slate-600" />
-                          </div>
-                        )}
-                        <span
-                          className={`text-sm ${
-                            feature.included ? "text-slate-300" : "text-slate-600 line-through"
-                          }`}
-                        >
-                          {feature.text}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* CTA */}
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => handlePlanClick(plan.id)}
-                    className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
-                      disabled
-                        ? "bg-slate-800 text-slate-500 cursor-not-allowed"
-                        : plan.ctaStyle + " active:scale-[0.97] cursor-pointer"
-                    }`}
+                  {/* Card */}
+                  <div
+                    className={`relative bg-slate-900/80 backdrop-blur-xl border-2 ${plan.border_color} rounded-2xl p-7 h-full flex flex-col transition-all duration-300 group-hover:border-opacity-80 ${plan.glow_color} group-hover:shadow-2xl`}
                   >
-                    {!disabled && plan.id !== "free" && (
-                      <MessageCircle className="w-4 h-4" />
-                    )}
-                    {label}
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+                    {/* Icon + Title */}
+                    <div className="mb-6">
+                      <div
+                        className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${plan.icon_bg} flex items-center justify-center mb-4 shadow-lg`}
+                      >
+                        <Icon className="w-7 h-7 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-white mb-1">{plan.name}</h3>
+                      <p className="text-sm text-slate-400">{plan.description}</p>
+                    </div>
+
+                    {/* Price */}
+                    <div className="flex items-baseline gap-1 mb-8">
+                      <span className="text-4xl font-extrabold text-white">{plan.price}</span>
+                      <span className="text-slate-500 text-sm">{plan.period}</span>
+                    </div>
+
+                    {/* Features */}
+                    <ul className="space-y-3 mb-8 flex-1">
+                      {featuresList.map((feature, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          {feature.included ? (
+                            <div className="mt-0.5 p-0.5 rounded-full bg-emerald-500/20">
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            </div>
+                          ) : (
+                            <div className="mt-0.5 p-0.5 rounded-full bg-slate-700/50">
+                              <Lock className="w-3.5 h-3.5 text-slate-650" />
+                            </div>
+                          )}
+                          <span
+                            className={`text-sm ${
+                              feature.included ? "text-slate-300" : "text-slate-600 line-through"
+                            }`}
+                          >
+                            {feature.text}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* CTA */}
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => handlePlanClick(plan.id)}
+                      className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                        disabled
+                          ? "bg-slate-800 text-slate-550 cursor-not-allowed"
+                          : (plan.cta_style || plan.ctaStyle || "") + " active:scale-[0.97] cursor-pointer"
+                      }`}
+                    >
+                      {!disabled && plan.id !== "free" && (
+                        <MessageCircle className="w-4 h-4" />
+                      )}
+                      {label}
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
 
         {/* FAQ / Trust */}
         <motion.div

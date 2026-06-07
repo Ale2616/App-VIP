@@ -40,6 +40,11 @@ export interface App {
   uploaded_by: string | null;
   created_at: string;
   updated_at: string;
+  mod?: string | null;
+  content_rating?: string | null;
+  reviews?: Array<{ name: string; score: number; comment: string; date: string }> | null;
+  ratings_histogram?: Record<string, string | number> | null;
+  view_count?: number;
 }
 
 // ─── Activity Log ───────────────────────────────────────

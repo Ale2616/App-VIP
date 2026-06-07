@@ -14,6 +14,7 @@ import {
   Search,
   ArrowRight,
   Crown,
+  Flame,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -83,6 +84,11 @@ export default function HomePage() {
   const featuredApps = [...allApps]
     .sort((a, b) => (b.download_count ?? 0) - (a.download_count ?? 0))
     .slice(0, 4);
+
+  // Tendencias (Lo más visto hoy): Top 6 con más visitas
+  const trendingApps = [...allApps]
+    .sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0))
+    .slice(0, 6);
 
   // Actualizaciones Recientes: Ordenados por fecha de creación desc (más recientes primero)
   const recentApps = [...allApps]
@@ -202,6 +208,26 @@ export default function HomePage() {
                       </Link>
                     );
                   })}
+                </div>
+              </section>
+            )}
+
+            {/* Sección 📈 Tendencias - Lo más visto hoy */}
+            {trendingApps.length > 0 && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Flame className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+                    <h2 className="text-xl font-extrabold tracking-tight">Lo más visto hoy</h2>
+                  </div>
+                </div>
+                {/* Carrusel Horizontal */}
+                <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-hide">
+                  {trendingApps.map((app) => (
+                    <div key={app.id} className="w-40 sm:w-48 shrink-0 snap-start">
+                      <AppCard app={app} />
+                    </div>
+                  ))}
                 </div>
               </section>
             )}

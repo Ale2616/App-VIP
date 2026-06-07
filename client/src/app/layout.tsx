@@ -6,6 +6,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { Footer } from "@/components/Footer";
+import AppRequestModal from "@/components/AppRequestModal";
 import { Send } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -149,6 +150,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             {children}
             <Footer />
+            <AppRequestModal />
           </AuthProvider>
         </QueryProvider>
 
