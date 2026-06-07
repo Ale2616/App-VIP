@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import SearchBar from "@/components/SearchBar";
 import { Button } from "@/components/ui/button";
+import PanelPro from "@/components/PanelPro";
 import {
   Menu,
   X,
@@ -56,6 +58,7 @@ export default function Header({
 }: HeaderProps) {
   const { isAuthenticated, isAdmin, logout, profile } = useAuthStore();
   const { logoUrl } = useSiteSettings();
+  const router = useRouter();
 
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -156,14 +159,7 @@ export default function Header({
             </button>
 
             {/* Panel Admin / Pro */}
-            {isAuthenticated && isAdmin && (
-              <Link href="/admin-panel" className="hidden sm:inline-block">
-                <Button size="sm" className="bg-gradient-to-r from-yellow-400 via-yellow-300 to-amber-500 hover:from-yellow-300 hover:via-yellow-200 hover:to-amber-400 text-yellow-950 font-extrabold shadow-md shadow-yellow-500/40 border border-yellow-200 transition-all">
-                  <Crown className="w-4 h-4 mr-1" />
-                  Panel Pro
-                </Button>
-              </Link>
-            )}
+            <PanelPro className="hidden sm:inline-flex" size="sm" />
 
             {/* Perfil / Auth */}
             {isAuthenticated ? (
@@ -230,11 +226,13 @@ export default function Header({
                 )}
               </div>
             ) : (
-              <Link href="/login">
-                <Button size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600">
-                  Entrar
-                </Button>
-              </Link>
+              <Button
+                onClick={() => router.push("/login")}
+                size="sm"
+                className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 cursor-pointer"
+              >
+                Entrar
+              </Button>
             )}
           </div>
         </div>
@@ -303,14 +301,11 @@ export default function Header({
 
             {/* Footer Drawer */}
             <div className="border-t border-gray-100 dark:border-slate-800 pt-4">
-              {isAuthenticated && isAdmin && (
-                <Link href="/admin-panel" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full bg-gradient-to-r from-yellow-400 via-yellow-300 to-amber-500 hover:from-yellow-300 hover:via-yellow-200 hover:to-amber-400 text-yellow-950 font-extrabold shadow-md shadow-yellow-500/40 border border-yellow-200 transition-all mb-2">
-                    <Crown className="w-4 h-4 mr-1.5" />
-                    Panel Pro
-                  </Button>
-                </Link>
-              )}
+              <PanelPro
+                className="w-full mb-2"
+                size="default"
+                onClick={() => setMobileMenuOpen(false)}
+              />
               <p className="text-[10px] text-gray-400 dark:text-slate-500 text-center">
                 App VIP Premium © {new Date().getFullYear()}
               </p>

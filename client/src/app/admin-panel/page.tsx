@@ -17,6 +17,7 @@ import BulkUpload from "@/components/BulkUpload";
 import CsvLinkUpdater from "@/components/CsvLinkUpdater";
 import BulkDeleter from "@/components/BulkDeleter";
 import RoleSelector from "@/components/RoleSelector";
+import MembresiasModal from "@/components/MembresiasModal";
 
 const SYSTEM_CONFIG = {
   BUCKET_NAME: "app-images",
@@ -77,6 +78,9 @@ interface UserProfile {
   email: string;
   role: string;
   created_at: string;
+  membership_type?: string | null;
+  membership_start?: string | null;
+  membership_expiry?: string | null;
 }
 
 export default function AdminPanel() {
@@ -88,6 +92,7 @@ export default function AdminPanel() {
   const [activeCategory, setActiveCategory] = useState("TODOS");
   const [activeTab, setActiveTab] = useState<"apps" | "usuarios" | "bulk" | "bulk-json" | "bulk-links" | "bulk-delete" | "membresias">("apps");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMembresiasModalOpen, setIsMembresiasModalOpen] = useState(false);
   const [editingApp, setEditingApp] = useState<Application | null>(null);
   const [notification, setNotification] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
@@ -436,8 +441,8 @@ export default function AdminPanel() {
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${activeTab === "bulk-delete" ? "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-md" : "bg-white dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-850 hover:border-gray-300 dark:hover:border-slate-700"}`}>
             <Trash2 className="w-4 h-4" /> Eliminar Masivamente
           </button>
-          <button onClick={() => setActiveTab("membresias")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${activeTab === "membresias" ? "bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white shadow-md" : "bg-white dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-850 hover:border-gray-300 dark:hover:border-slate-700"}`}>
+          <button onClick={() => setIsMembresiasModalOpen(true)}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${isMembresiasModalOpen ? "bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white shadow-md" : "bg-white dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-850 hover:border-gray-300 dark:hover:border-slate-700"}`}>
             <Crown className="w-4 h-4" /> Gestión de Membresías
           </button>
         </div>
@@ -684,6 +689,11 @@ export default function AdminPanel() {
           onSaved={() => { setIsModalOpen(false); setNotification({ msg: "Aplicación guardada exitosamente", type: "success" }); fetchData(); }}
         />
       )}
+
+      <MembresiasModal
+        isOpen={isMembresiasModalOpen}
+        onClose={() => setIsMembresiasModalOpen(false)}
+      />
     </main>
   );
 }

@@ -64,7 +64,7 @@ export async function middleware(request: NextRequest) {
 
     const role = profile?.role;
 
-    if (!role || !["SUPER_ADMIN", "EDITOR"].includes(role)) {
+    if (!role || !["SUPER_ADMIN", "EDITOR", "admin"].includes(role)) {
       if (isAdminApi) {
         return NextResponse.json({ error: "No autorizado (permisos insuficientes)" }, { status: 403 });
       }

@@ -6,6 +6,9 @@ export interface Profile {
   role: "user" | "vip" | "elite" | "admin" | "SUPER_ADMIN" | "EDITOR" | "VIP_PREMIUM" | "VIP_ESTANDAR" | "FREE_USER";
   avatar_url?: string | null;
   created_at: string;
+  membership_type?: string | null;
+  membership_start?: string | null;
+  membership_expiry?: string | null;
 }
 
 // Legacy alias for backward compatibility

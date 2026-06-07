@@ -443,35 +443,46 @@ export default function AppDetailClient() {
               </div>
             </div>
 
-            {/* BARRA DE ESTADÍSTICAS */}
-            <div className="bg-gray-100 dark:bg-slate-900 rounded-2xl p-4 border border-gray-200/40 dark:border-slate-800 grid grid-cols-3 sm:grid-cols-6 gap-4 text-center divide-x-0 sm:divide-x divide-gray-200/60 dark:divide-slate-700/50">
-              <div className="space-y-0.5">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500">Calif.</p>
-                <p className="text-sm font-extrabold text-gray-800 dark:text-white flex items-center justify-center gap-0.5">
+            {/* BARRA DE ESTADÍSTICAS (FICHA TÉCNICA) */}
+            <div className="bg-gray-100 dark:bg-slate-900 rounded-2xl p-6 md:p-4 border border-gray-200/40 dark:border-slate-800 flex flex-col md:flex-row gap-y-4 md:gap-y-0 items-center justify-center md:justify-around text-center md:divide-x divide-gray-250 dark:divide-slate-800">
+              {/* Calificación */}
+              <div className="space-y-1 md:space-y-0.5 w-full md:w-auto">
+                <p className="text-sm md:text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500">Calif.</p>
+                <p className="text-lg md:text-sm font-extrabold text-gray-800 dark:text-white flex items-center justify-center gap-0.5">
                   ⭐ {appScore}
                 </p>
               </div>
-              <div className="space-y-0.5">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-gray-404 dark:text-slate-500">Edad</p>
-                <p className="text-sm font-extrabold text-gray-800 dark:text-white">{app.content_rating || "3+"}</p>
+
+              {/* Edad */}
+              <div className="space-y-1 md:space-y-0.5 w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-gray-200/40 dark:border-slate-800/80 md:pl-8">
+                <p className="text-sm md:text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500">Edad</p>
+                <p className="text-lg md:text-sm font-extrabold text-gray-800 dark:text-white">{app.content_rating || "3+"}</p>
               </div>
-              <div className="space-y-0.5">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-gray-404 dark:text-slate-500">Categoría</p>
-                <p className="text-xs font-extrabold text-blue-600 dark:text-blue-400 truncate max-w-full px-1">{app.category}</p>
+
+              {/* Categoría */}
+              <div className="space-y-1 md:space-y-0.5 w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-gray-200/40 dark:border-slate-800/80 md:pl-8">
+                <p className="text-sm md:text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500">Categoría</p>
+                <p className="text-lg md:text-xs font-extrabold text-blue-600 dark:text-blue-400 truncate max-w-full px-1">{app.category}</p>
               </div>
-              <div className="space-y-0.5 w-auto px-2 text-center min-w-0">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-gray-404 dark:text-slate-500">Mod</p>
-                <div className="text-xs sm:text-sm font-extrabold text-gray-800 dark:text-white leading-tight break-words">
+
+              {/* MOD */}
+              <div className="space-y-1 md:space-y-0.5 w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-gray-200/40 dark:border-slate-800/80 md:pl-8 min-w-0">
+                <p className="text-sm md:text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500">Mod</p>
+                <div className="text-lg md:text-xs font-extrabold text-gray-800 dark:text-white leading-tight break-words">
                   {typeof isMod === "string" ? isMod : (isMod ? "Sí" : "No")}
                 </div>
               </div>
-              <div className="space-y-0.5">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-gray-404 dark:text-slate-500">Versión</p>
-                <p className="text-sm font-extrabold text-gray-800 dark:text-white truncate max-w-full px-1">{app.version || "1.0.0"}</p>
+
+              {/* Versión */}
+              <div className="space-y-1 md:space-y-0.5 w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-gray-200/40 dark:border-slate-800/80 md:pl-8">
+                <p className="text-sm md:text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500">Versión</p>
+                <p className="text-lg md:text-sm font-extrabold text-gray-800 dark:text-white truncate max-w-full px-1">{app.version || "1.0.0"}</p>
               </div>
-              <div className="space-y-0.5">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-gray-404 dark:text-slate-500">Tamaño</p>
-                <p className="text-sm font-extrabold text-gray-800 dark:text-white">{fileSizeMB}</p>
+
+              {/* Tamaño */}
+              <div className="space-y-1 md:space-y-0.5 w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-gray-200/40 dark:border-slate-800/80 md:pl-8">
+                <p className="text-sm md:text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500">Tamaño</p>
+                <p className="text-lg md:text-sm font-extrabold text-gray-800 dark:text-white">{fileSizeMB}</p>
               </div>
             </div>
 

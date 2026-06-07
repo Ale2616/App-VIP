@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { HelpCircle, Shield, User, Edit, Sparkles } from "lucide-react";
+import { HelpCircle, Shield, User, Edit, Sparkles, Loader2 } from "lucide-react";
 
 // Mapeo de descripción de beneficios por rol
 const ROLE_DESCRIPTIONS: Record<string, string> = {
@@ -34,35 +37,60 @@ interface RoleSelectorProps {
 }
 
 export default function RoleSelector({ userId, currentRole, onRoleUpdated }: RoleSelectorProps) {
-  // Normalizar rol actual por si viene en formato antiguo
+  // Normalizar rol inicial
   const initialRole = LEGACY_ROLE_MAPPING[currentRole] || currentRole || "FREE_USER";
   const [role, setRole] = useState(initialRole);
   const [loading, setLoading] = useState(false);
+
+  // Componente controlado: Carga el rol real desde Supabase al montar/cambiar de usuario
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .single();
+
+        if (error) throw error;
+        if (data?.role) {
+          const normRole = LEGACY_ROLE_MAPPING[data.role] || data.role;
+          setRole(normRole);
+        }
+      } catch (err) {
+        console.error("Error al cargar el rol actual del usuario:", err);
+      }
+    };
+
+    if (userId) {
+      fetchUserRole();
+    }
+  }, [userId]);
 
   const handleRoleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newRole = e.target.value;
     setLoading(true);
 
     try {
-      const res = await fetch("/api/set-role", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, role: newRole }),
-      });
+      // Ejecutar actualización directa en Supabase en la tabla profiles
+      const { error } = await supabase
+        .from("profiles")
+        .update({ role: newRole })
+        .eq("id", userId);
 
-      const json = await res.json();
-
-      if (!res.ok) {
-        throw new Error(json?.error || "Error al actualizar el rol");
+      if (error) {
+        throw error;
       }
 
       setRole(newRole);
-      toast.success("Rol actualizado con éxito");
+      toast.success("Rol actualizado en Supabase");
+      
       if (onRoleUpdated) {
         onRoleUpdated(newRole);
       }
     } catch (err: any) {
-      toast.error(err.message || "Error al cambiar el rol");
+      console.error("Error al actualizar el rol:", err);
+      toast.error("Error al actualizar");
     } finally {
       setLoading(false);
     }
@@ -87,7 +115,7 @@ export default function RoleSelector({ userId, currentRole, onRoleUpdated }: Rol
     <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
       <div className="relative flex items-center gap-2">
         <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-          {getRoleIcon(role)}
+          {loading ? <Loader2 className="w-4 h-4 text-purple-500 animate-spin" /> : getRoleIcon(role)}
         </div>
         <select
           value={role}
