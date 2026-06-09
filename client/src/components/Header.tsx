@@ -110,7 +110,7 @@ export default function Header({
                 <img
                   src={logoUrl}
                   alt="App VIP Logo"
-                  className="h-12 w-auto max-w-full h-auto rounded-2xl object-contain shadow-md transition-all duration-300"
+                  className="w-12 h-12 object-contain rounded-2xl shadow-md transition-all duration-300"
                 />
               ) : (
                 <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center rounded-lg font-bold text-xs shadow-md">

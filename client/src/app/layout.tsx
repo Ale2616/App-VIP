@@ -148,7 +148,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} overflow-x-hidden`}>
         <QueryProvider>
           <AuthProvider>
-            {children}
+            <div className="w-full max-w-7xl mx-auto px-4">
+              {children}
+            </div>
             <Footer />
             <AppRequestModal />
           </AuthProvider>
