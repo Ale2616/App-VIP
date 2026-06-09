@@ -341,7 +341,7 @@ export default function AppDetailClient() {
   const suggestions = suggestionsData?.apps?.filter((item: any) => item.id !== app.id).slice(0, 5) || [];
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-gray-905 dark:text-slate-100 transition-colors duration-200 pb-12">
+    <main className="min-h-screen w-full bg-slate-50 dark:bg-slate-955 text-gray-905 dark:text-slate-100 transition-colors duration-200 pb-12">
       <style dangerouslySetInnerHTML={{ __html: `
         .scrollbar-custom::-webkit-scrollbar {
           height: 6px;
@@ -388,7 +388,7 @@ export default function AppDetailClient() {
                       alt={app.name}
                       onError={() => setIconError(true)}
                       referrerPolicy="no-referrer"
-                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-[22%] object-cover shadow-md border border-gray-100 dark:border-slate-700/50"
+                      className="w-24 h-24 sm:w-28 sm:h-28 max-w-full h-auto rounded-[22%] object-cover shadow-md border border-gray-100 dark:border-slate-700/50"
                     />
                   ) : (
                     <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[22%] bg-gray-100 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 flex items-center justify-center shadow-inner">
@@ -530,7 +530,7 @@ export default function AppDetailClient() {
                   {app.download_options.map((opt: any, idx: number) => {
                     const isOptionDownloading = downloadingOptionId === opt.url;
                     return (
-                      <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-950/40 border border-gray-100 dark:border-slate-800 rounded-xl">
+                      <div key={idx} className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-gray-50 dark:bg-slate-955/40 border border-gray-150 dark:border-slate-850 rounded-xl">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-slate-450">
                             APK
@@ -544,7 +544,7 @@ export default function AppDetailClient() {
                           size="icon"
                           disabled={isOptionDownloading}
                           onClick={() => handleOptionDownload(opt.url, opt.title)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg w-9 h-9"
+                          className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg w-full sm:w-9 h-9 shrink-0 flex items-center justify-center"
                         >
                           {isOptionDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                         </Button>
@@ -553,7 +553,7 @@ export default function AppDetailClient() {
                   })}
                 </div>
               ) : (
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-950/40 border border-gray-100 dark:border-slate-800 rounded-xl">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-gray-50 dark:bg-slate-950/40 border border-gray-100 dark:border-slate-800 rounded-xl">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-slate-450">
                       APK
@@ -567,7 +567,7 @@ export default function AppDetailClient() {
                     size="icon"
                     disabled={downloading}
                     onClick={handleDownload}
-                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg w-9 h-9"
+                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg w-full sm:w-9 h-9 shrink-0 flex items-center justify-center"
                   >
                     {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                   </Button>

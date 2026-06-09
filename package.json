@@ -1,6 +1,15 @@
 {
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
   "dependencies": {
     "google-play-scraper": "^10.1.2",
     "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "next": "^16.2.7"
   }
 }

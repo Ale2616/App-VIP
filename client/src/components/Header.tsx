@@ -93,7 +93,7 @@ export default function Header({
     <>
       {/* ── Navbar Principal ── */}
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-gray-250/50 dark:border-slate-800/60 shadow-sm transition-colors duration-200">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+        <div className="container mx-auto px-4 min-h-[4rem] py-2 lg:py-0 flex flex-wrap items-center justify-between gap-4 w-full">
           
           {/* Lado Izquierdo: Hamburgesa (Móvil) & Logo */}
           <div className="flex items-center gap-3">
@@ -110,7 +110,7 @@ export default function Header({
                 <img
                   src={logoUrl}
                   alt="App VIP Logo"
-                  className="h-12 w-auto rounded-2xl object-contain shadow-md transition-all duration-300"
+                  className="h-12 w-auto max-w-full h-auto rounded-2xl object-contain shadow-md transition-all duration-300"
                 />
               ) : (
                 <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center rounded-lg font-bold text-xs shadow-md">

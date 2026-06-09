@@ -17,24 +17,64 @@ export function useLogin() {
       email: string;
       password: string;
     }) => {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Tiempo de espera agotado. Por favor, verifica tu conexión de red.")), 12000)
+      );
 
-      if (error) throw error;
-      return data;
+      const signInPromise = (async () => {
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (error) throw error;
+          return data;
+        } catch (err: any) {
+          if (err instanceof TypeError && err.message?.toLowerCase().includes("fetch")) {
+            throw new Error("Error de conexión. No se pudo contactar al servidor de Supabase.");
+          }
+          throw err;
+        }
+      })();
+
+      return await Promise.race([signInPromise, timeoutPromise]);
     },
     onSuccess: async (data) => {
       if (data.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", data.user.id)
-          .single();
+        try {
+          const profilePromise = (async () => {
+            const { data: profile, error } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("id", data.user.id)
+              .single();
+            if (error) throw error;
+            return profile;
+          })();
 
-        if (profile) {
-          setProfile(profile);
+          const profileTimeout = new Promise<null>((resolve) =>
+            setTimeout(() => resolve(null), 5000)
+          );
+
+          const profile = await Promise.race([profilePromise, profileTimeout]);
+
+          if (profile) {
+            setProfile(profile);
+          } else {
+            setProfile({
+              id: data.user.id,
+              email: data.user.email || "",
+              role: "user",
+            } as any);
+          }
+        } catch (profileError) {
+          console.error("Error al obtener perfil durante el inicio de sesión:", profileError);
+          setProfile({
+            id: data.user.id,
+            email: data.user.email || "",
+            role: "user",
+          } as any);
         }
       }
       router.push("/");

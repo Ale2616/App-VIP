@@ -76,7 +76,7 @@ export default function AppCard({ app }: { app: App }) {
                 alt={app.name}
                 referrerPolicy="no-referrer"
                 onError={() => setHasError(true)}
-                className="w-full h-full aspect-square object-cover rounded-xl shadow-md group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full max-w-full h-auto aspect-square object-cover rounded-xl shadow-md group-hover:scale-105 transition-transform duration-300"
               />
             ) : (
               <div className="w-full h-full aspect-square rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center shadow-md">

@@ -136,7 +136,7 @@ export default function HomePage() {
         setSearchTerm={setSearchTerm}
       />
 
-      <main className="flex-1 container mx-auto px-4 py-8 space-y-12">
+      <main className="flex-1 container mx-auto px-4 py-8 space-y-12 w-full">
         {isLoading ? (
           /* Estado de Carga */
           <div className="space-y-8">
@@ -166,7 +166,7 @@ export default function HomePage() {
                       app.description.toLowerCase().includes("mod");
                     return (
                       <Link href={`/apps/${app.id}`} key={app.id} className="group">
-                        <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-5 shadow-sm hover:shadow-xl border border-gray-200/60 dark:border-slate-700/50 transition-all duration-300 flex items-start gap-4 h-full">
+                        <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-5 shadow-sm hover:shadow-xl border border-gray-200/60 dark:border-slate-700/50 transition-all duration-300 flex flex-col sm:flex-row items-center sm:items-start gap-4 h-full w-full">
                           <span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 shadow-sm animate-pulse">
                             🔥 POPULAR
                           </span>
@@ -176,7 +176,7 @@ export default function HomePage() {
                               <img
                                 src={app.icon_url || app.image_url!}
                                 alt={app.name}
-                                className="w-full h-full aspect-square object-cover rounded-xl shadow-sm group-hover:scale-105 transition-transform duration-300"
+                                className="w-full h-full max-w-full h-auto aspect-square object-cover rounded-xl shadow-sm group-hover:scale-105 transition-transform duration-300"
                               />
                             ) : (
                               <div className="w-full h-full rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center shadow-sm">
@@ -335,7 +335,7 @@ export default function HomePage() {
              VISTA 2: LISTADO EN CUADRÍCULA (Búsqueda o Categoría activa)
              ════════════════════════════════════════════════════════════ */
           <section className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3 w-full">
               <h2 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
                 {searchTerm ? (
                   <Search className="w-5 h-5 text-indigo-605 dark:text-indigo-400" />
